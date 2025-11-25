@@ -1,0 +1,36 @@
+{
+  "name": "cbecs",
+  "version": "1.0.0",
+  "description": "An E-commerce system that caters for both retail and service SMEs",
+  "keywords": [
+    "SME",
+    "e-commerce",
+    "category-based"
+  ],
+  "homepage": "https://github.com/venemousCoder/cbecs#readme",
+  "bugs": {
+    "url": "https://github.com/venemousCoder/cbecs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/venemousCoder/cbecs.git"
+  },
+  "license": "MIT",
+  "author": "venemousCoder",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "jest app"
+  },
+  "dependencies": {
+    "connect-flash": "^0.1.1",
+    "connect-mongo": "^5.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "mongoose": "^8.20.1",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "socket.io": "^4.8.1"
+  }
+}
