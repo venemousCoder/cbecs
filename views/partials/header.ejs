@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'CBECS - Premier Online Marketplace' %></title>
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/public/css/home.css">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <header class="main-header">
+        <!-- Top Strip -->
+        <div class="top-bar">
+            <div class="container">
+                <div class="top-left">
+                    <a href="#" class="top-bar-link"><i class="fas fa-store"></i> Register Your Business (SME)</a>
+                </div>
+                <div class="top-right" style="display: flex; gap: 20px;">
+                    <a href="#" class="top-bar-link">Download App</a>
+                    <a href="#" class="top-bar-link">Help Center</a>
+                    <a href="#" class="top-bar-link">EN / NGN</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Header Content -->
+        <div class="main-navigation-area">
+            <div class="container">
+                <!-- Logo -->
+                <div class="logo">
+                    <a href="/">CBECS<span>.</span></a>
+                </div>
+
+                <!-- Search -->
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" placeholder="Search products, services, cafés...">
+                    <button class="search-button">Search</button>
+                </div>
+
+                <!-- User Actions -->
+                <div class="user-actions">
+                    <a href="/login" class="user-action">
+                        <div style="position: relative;">
+                            <i class="far fa-user"></i>
+                        </div>
+                        <span>Sign In</span>
+                    </a>
+                    <a href="/bookings" class="user-action">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Bookings</span>
+                    </a>
+                    <a href="/cart" class="user-action" style="position: relative;">
+                        <div style="position: relative;">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count-badge">2</span>
+                        </div>
+                        <span>Cart</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <main class="container">

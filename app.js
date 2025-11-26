@@ -7,6 +7,7 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const http = require('http');
 const { Server } = require("socket.io");
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
@@ -14,16 +15,16 @@ const io = new Server(server);
 
 // It is highly recommended to use dotenv to manage your environment variables.
 // e.g. const MONGO_URI = process.env.MONGO_URI;
-const MONGO_URI = 'mongodb://localhost:27017/cbecs'; // Replace with your MongoDB connection string
-const SESSION_SECRET = 'your-secret-session-key'; // Replace with a strong secret
+const MONGO_URI = process.env.NODE_ENV === 'production' ? process.env.MONGO_URI : 'mongodb://127.0.0.1:27017/cbecs'; // Replace with your MongoDB connection string
+const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // Express middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// EJS is a good choice for a view engine, but you can use others.
-// app.set('view engine', 'ejs');
-// app.use(express.static('public'));
+// View engine setup
+app.set('view engine', 'ejs');
+app.use('/public', express.static('public'));
 
 
 // Session middleware
@@ -53,15 +54,14 @@ app.use((req, res, next) => {
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
     res.locals.currentUser = req.user;
+    console.log("LOCALS: ",res.locals);
     next();
 });
 
 
-// Routes
-// You can move your routes to a separate 'routes' directory
-app.get('/', (req, res) => {
-    res.send('Welcome to CBECS!');
-});
+// Routes settings
+const indexRouter = require('./routes/index.routes');
+app.use('/', indexRouter);
 
 
 // Socket.io connection
@@ -74,10 +74,7 @@ io.on('connection', (socket) => {
 
 
 // Database connection and server start
-mongoose.connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
+mongoose.connect(MONGO_URI).then(() => {
     console.log('Connected to MongoDB');
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {

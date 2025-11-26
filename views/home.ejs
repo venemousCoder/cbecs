@@ -1,0 +1,236 @@
+<%- include('partials/header') %>
+
+<!-- MAIN LAYOUT GRID -->
+<div class="home-wrapper">
+    
+    <!-- Left Sidebar: Categories -->
+    <nav class="sidebar-nav">
+        <ul>
+            <% categories.slice(0, 11).forEach(cat => { %>
+                <li>
+                    <a href="/category/<%= cat.id %>">
+                        <i class="fas <%= cat.icon %>" style="<%= cat.type === 'service' ? 'color: #9c27b0;' : (cat.type === 'food' ? 'color: #ff9800;' : '') %>"></i> 
+                        <span><%= cat.name %></span>
+                    </a>
+                </li>
+            <% }) %>
+            <li>
+                <a href="/categories" style="font-weight: 600; color: var(--primary);">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>All Categories</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Center: Hero Slider -->
+    <div class="hero-slider">
+        <!-- Rendering ALL slides so JS can cycle them -->
+        <% heroSlides.forEach((slide, index) => { %>
+            <div class="hero-slide" style="background-image: url('<%= slide.image %>'); background-color: <%= slide.bg %>; display: <%= index === 0 ? 'flex' : 'none' %>;">
+                <div class="slide-content">
+                    <span class="slide-badge">
+                        <%= slide.link.includes('service') ? 'Service Deals' : (slide.link.includes('food') ? 'Tasty Offers' : 'Big Sale') %>
+                    </span>
+                    <h2><%= slide.title %></h2>
+                    <p><%= slide.subtitle %></p>
+                    <a href="<%= slide.link %>" class="slide-btn">Explore Now <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+
+    <!-- Right: Promo/Benefits -->
+    <div class="promo-banners">
+        <div class="promo-card">
+            <div class="promo-icon-box" style="color: #ff5722; background: #fff3e0;">
+                <i class="fas fa-shopping-bag"></i>
+            </div>
+            <h4>Retail Store</h4>
+            <p>Shop Gadgets, Fashion & More</p>
+        </div>
+        <div class="promo-card">
+            <div class="promo-icon-box" style="color: #9c27b0; background: #f3e5f5;">
+                <i class="fas fa-tools"></i>
+            </div>
+            <h4>Book Services</h4>
+            <p>Mechanics, Salons & Laundry</p>
+        </div>
+        <div class="promo-card">
+            <div class="promo-icon-box" style="color: #4caf50; background: #e8f5e9;">
+                <i class="fas fa-utensils"></i>
+            </div>
+            <h4>Order Food</h4>
+            <p>Meals from local Cafés</p>
+        </div>
+    </div>
+</div>
+
+<!-- CATEGORY QUICK LINKS (CIRCLES) -->
+<div class="cat-circle-grid">
+    <% categories.slice(0, 8).forEach(cat => { %>
+        <a href="/category/<%= cat.id %>" class="cat-item">
+            <div class="cat-icon-circle" style="<%= cat.type === 'service' ? 'border-color: #e1bee7;' : '' %>">
+                <i class="fas <%= cat.icon %>" style="<%= cat.type === 'service' ? 'color: #9c27b0;' : '' %>"></i>
+            </div>
+            <span><%= cat.name %></span>
+        </a>
+    <% }) %>
+</div>
+
+<!-- FLASH SALES / LIMITED OFFERS -->
+<div class="section-header">
+    <h3 class="section-title"><i class="fas fa-bolt"></i> Flash Deals & Service Promos</h3>
+    <a href="/flash-sales" class="view-all-btn">See All Deals <i class="fas fa-chevron-right"></i></a>
+</div>
+
+<div class="flash-container">
+    <div class="flash-grid">
+        <% flashSales.forEach(item => { %>
+            <a href="#" class="flash-card">
+                <div class="badge-discount"><%= item.discount %></div>
+                <div class="flash-img-wrapper">
+                    <img src="<%= item.image %>" alt="<%= item.name %>" class="flash-img">
+                </div>
+                <div class="flash-info">
+                    <h5><%= item.name %></h5>
+                    <div class="flash-price">₦<%= item.price %></div>
+                    <div class="flash-old-price">₦<%= item.oldPrice %></div>
+                    
+                    <% if(item.type === 'product') { %>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: <%= Math.min(100, (item.itemsLeft / 50) * 100) %>%"></div>
+                        </div>
+                        <span class="flash-stock"><%= item.itemsLeft %> Items Left</span>
+                    <% } else { %>
+                        <div class="service-tag"><i class="fas fa-clock"></i> Limited Slots</div>
+                    <% } %>
+                </div>
+            </a>
+        <% }) %>
+    </div>
+</div>
+
+<!-- DISCOVER BUSINESSES (MIXED GRID) -->
+<div class="section-header">
+    <h3 class="section-title">Discover Products, Services & Food</h3>
+    <div class="filter-tabs">
+        <!-- These would handle filtering via JS or Links -->
+        <span class="active">All</span>
+        <span>Products</span>
+        <span>Services</span>
+    </div>
+    <a href="/listings" class="view-all-btn">View More <i class="fas fa-chevron-right"></i></a>
+</div>
+
+<div class="product-grid">
+    <% listings.forEach(item => { %>
+        <a href="/<%= item.type === 'service' ? 'booking' : (item.type === 'food' ? 'order' : 'product') %>/<%= item._id %>" class="product-card">
+            <!-- Type Badge -->
+            <div class="type-badge <%= item.type %>">
+                <% if(item.type === 'retail' || item.type === 'product') { %> <i class="fas fa-box"></i> Retail
+                <% } else if(item.type === 'service') { %> <i class="fas fa-tools"></i> Service
+                <% } else if(item.type === 'food') { %> <i class="fas fa-utensils"></i> Café
+                <% } %>
+            </div>
+
+            <div class="product-actions">
+                <span class="action-btn" title="Save"><i class="far fa-heart"></i></span>
+                <span class="action-btn" title="Quick View"><i class="far fa-eye"></i></span>
+            </div>
+            <div class="product-img-container">
+                <img src="<%= item.image %>" alt="<%= item.name %>">
+            </div>
+            <div class="product-info">
+                <% if(item.provider) { %>
+                    <div class="provider-name"><i class="fas fa-store"></i> <%= item.provider %></div>
+                <% } %>
+                <h3><%= item.name %></h3>
+                <div class="price-row">
+                    <span class="current-price">₦<%= item.price %></span>
+                </div>
+                <div class="rating-row">
+                    <span class="stars">
+                        <i class="fas fa-star"></i> <%= item.rating %>
+                    </span>
+                    <span>• <%= item.sold %></span>
+                </div>
+                
+                <!-- Action Button based on type -->
+                <div class="card-cta-btn <%= item.type %>">
+                    <% if(item.type === 'service') { %> Book Now
+                    <% } else if(item.type === 'food') { %> Order Now
+                    <% } else { %> Add to Cart <% } %>
+                </div>
+            </div>
+        </a>
+    <% }) %>
+</div>
+
+<style>
+/* Inline styles for the specialized elements introduced in this view */
+.type-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    z-index: 2;
+}
+.type-badge.product, .type-badge.retail { background: var(--primary); }
+.type-badge.service { background: #9c27b0; }
+.type-badge.food { background: #4caf50; }
+
+.service-tag {
+    font-size: 11px;
+    color: #9c27b0;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.provider-name {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.card-cta-btn {
+    margin-top: 10px;
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+    background: #f5f5f5;
+    color: var(--text-main);
+}
+.product-card:hover .card-cta-btn.product { background: var(--primary); color: white; }
+.product-card:hover .card-cta-btn.service { background: #9c27b0; color: white; }
+.product-card:hover .card-cta-btn.food { background: #4caf50; color: white; }
+
+.filter-tabs {
+    display: flex;
+    gap: 15px;
+}
+.filter-tabs span {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding-bottom: 4px;
+}
+.filter-tabs span.active {
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+}
+</style>
+
+<%- include('partials/footer') %>
