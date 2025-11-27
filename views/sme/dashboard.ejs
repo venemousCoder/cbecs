@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <div class="section-header">
+        <h3 class="section-title">SME Dashboard</h3>
+        <div class="user-actions">
+            <span style="font-weight: 600; color: var(--text-muted);">Welcome, <%= user.name %></span>
+            <a href="/sme/create-business" class="slide-btn" style="padding: 8px 20px; font-size: 13px;">+ New Business</a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (locals.success && locals.success.length > 0) { %>
+        <div style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <% if (businesses.length === 0) { %>
+        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
+                <i class="fas fa-store-slash"></i>
+            </div>
+            <h3 style="color: var(--secondary);">No Businesses Found</h3>
+            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 30px;">You haven't created any business profiles yet. Create one to start selling products or services.</p>
+            <a href="/sme/create-business" class="search-button" style="display: inline-block; text-decoration: none;">Create My First Business</a>
+        </div>
+    <% } else { %>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;">
+            <% businesses.forEach(biz => { %>
+                <div class="product-card" style="flex-direction: row; gap: 15px; align-items: center;">
+                    <div style="width: 80px; height: 80px; border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0; border: 1px solid #eee;">
+                        <img src="<%= biz.logo %>" alt="<%= biz.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="type-badge <%= biz.category %>" style="position: static; display: inline-block; margin-bottom: 5px; font-size: 10px; padding: 2px 6px;">
+                            <%= biz.category.toUpperCase() %>
+                        </div>
+                        <h4 style="margin: 0 0 5px 0; font-size: 16px; color: var(--secondary);"><%= biz.name %></h4>
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted);"><i class="fas fa-map-marker-alt"></i> <%= biz.address %></p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <a href="/sme/business/<%= biz._id %>/manage" class="action-btn" style="width: auto; padding: 0 12px; border-radius: 4px; font-size: 12px; background: var(--bg-input);" title="Manage"><i class="fas fa-cog"></i></a>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

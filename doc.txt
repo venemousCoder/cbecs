@@ -44,3 +44,63 @@
 
   You can now access the business registration page at /business/register.
 
+
+✦ I've finalized the Passport authentication setup.
+
+  Summary of actions:
+   1. Dependencies: Installed bcryptjs for secure password hashing.
+   2. User Model: Updated models/user.js to include a pre-save hook for password
+      hashing and a comparePassword method.
+   3. Passport Config: Created config/passport.js implementing the Local Strategy
+      for authentication.
+   4. Controller: Created controllers/auth.controller.js to handle:
+       * Registration: Hashes passwords, validates input, and handles role
+         assignment (including defaulting to 'consumer' and accepting 'sme_owner'
+         from the business form).
+       * Login: Authenticates via Passport and redirects users based on their role
+         (e.g., SMEs to /sme/dashboard, Consumers to /).
+       * Logout: Ends the session and redirects to login.
+   5. Middleware: Created middleware/auth.js with ensureAuthenticated to protect
+      routes and forwardAuthenticated to redirect logged-in users away from auth
+      pages.
+   6. Routes: Updated routes/home.routes.js to bind the POST actions for /login,
+      /signup, and /business/register, and added the /logout route.
+   7. Views: Updated views/signup.ejs and views/signup-business.ejs to display
+      validation errors from the server and preserve input values if registration
+      fails.
+
+  You can now:
+   * Register as a Consumer at /signup.
+   * Register as a Business at /business/register.
+   * Login at /login and be redirected to your role-specific dashboard.
+   * Access protected dashboard routes (currently placeholders) which verify
+     authentication.
+
+     ✦ I have successfully implemented the SME onboarding process.
+
+  Summary of changes:
+
+   1. Models: Created models/business.js to store business profile information
+      including owner reference, category, address, description, and logo path.
+   2. File Uploads: Installed and configured multer in routes/sme.routes.js to
+      handle logo uploads, saving them to public/uploads/logos.
+   3. Controller: Created controllers/sme.controller.js to handle:
+       * Rendering the "Create Business" form.
+       * Processing the form submission, including file handling and database
+         saving.
+       * Rendering the SME Dashboard with a list of the user's businesses.
+   4. Views:
+       * Created views/sme/create-business.ejs: A responsive form for business
+         details and logo upload.
+       * Created views/sme/dashboard.ejs: A dashboard displaying the user's
+         businesses or a prompt to create one if none exist.
+   5. Routes:
+       * Created routes/sme.routes.js to define /create-business and /dashboard
+         routes, protected by authentication and role checks (sme_owner).
+       * Mounted this new router at /sme in routes/index.routes.js.
+       * Cleaned up temporary dashboard placeholders in routes/home.routes.js.
+
+  Next Steps:
+  You can now log in as an SME owner (or register one via /business/register) and
+  navigate to /sme/dashboard. From there, you can click "Create New Business" to
+  onboard a new shop.

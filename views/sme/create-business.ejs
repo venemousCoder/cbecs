@@ -1,0 +1,61 @@
+<%- include('../partials/header', { extraCss: 'auth.css' }) %>
+
+<div class="container" style="padding: 40px 0;">
+    <div class="auth-card" style="max-width: 600px; margin: 0 auto; border-top: 4px solid var(--primary);">
+        <div class="auth-header">
+            <h2>Create New Business</h2>
+            <p>Set up your store profile to start selling</p>
+        </div>
+
+        <!-- Validation Errors -->
+        <% if (typeof errors !== 'undefined') { %>
+            <% errors.forEach(function(error) { %>
+                <div style="color: var(--danger); background: #ffebee; padding: 10px; border-radius: var(--radius-sm); margin-bottom: 15px; font-size: 13px; text-align: center;">
+                    <%= error.msg %>
+                </div>
+            <% }); %>
+        <% } %>
+
+        <form action="/sme/create-business" method="POST" enctype="multipart/form-data" class="auth-form">
+            
+            <div class="form-group">
+                <label for="name">Business Name</label>
+                <input type="text" id="name" name="name" placeholder="e.g., Aisha's Fashion Hub" value="<%= typeof name != 'undefined' ? name : '' %>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Business Category</label>
+                <select id="category" name="category" style="width: 100%; padding: 12px 15px; border: 1px solid #d1d5db; border-radius: var(--radius-sm); background: var(--bg-input); font-family: var(--font-main); font-size: 14px;">
+                    <option value="" disabled <%= typeof category == 'undefined' ? 'selected' : '' %>>Select a category...</option>
+                    <option value="retail" <%= typeof category != 'undefined' && category == 'retail' ? 'selected' : '' %>>Retail (Products)</option>
+                    <option value="service" <%= typeof category != 'undefined' && category == 'service' ? 'selected' : '' %>>Service (Salons, Repairs, etc.)</option>
+                    <option value="food" <%= typeof category != 'undefined' && category == 'food' ? 'selected' : '' %>>Food & Café</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Business Address</label>
+                <input type="text" id="address" name="address" placeholder="Shop 24, Zoo Road, Kano" value="<%= typeof address != 'undefined' ? address : '' %>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (Optional)</label>
+                <textarea id="description" name="description" rows="4" placeholder="Tell customers about your business..." style="width: 100%; padding: 12px 15px; border: 1px solid #d1d5db; border-radius: var(--radius-sm); background: var(--bg-input); font-family: var(--font-main); font-size: 14px;"><%= typeof description != 'undefined' ? description : '' %></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="logo">Business Logo</label>
+                <input type="file" id="logo" name="logo" accept="image/*" style="padding: 10px 0;">
+                <small style="color: var(--text-muted); display: block;">Recommended: Square image, max 2MB</small>
+            </div>
+
+            <button type="submit" class="btn-auth">Create Business Profile</button>
+        </form>
+
+        <div class="auth-footer">
+            <a href="/sme/dashboard"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -14,23 +14,32 @@
             </div>
         <% } %>
 
+        <!-- Validation Errors -->
+        <% if (typeof errors !== 'undefined') { %>
+            <% errors.forEach(function(error) { %>
+                <div style="color: var(--danger); background: #ffebee; padding: 10px; border-radius: var(--radius-sm); margin-bottom: 15px; font-size: 13px; text-align: center;">
+                    <%= error.msg %>
+                </div>
+            <% }); %>
+        <% } %>
+
         <form action="/business/register" method="POST" class="auth-form">
             <input type="hidden" name="role" value="sme_owner">
             
             <div class="form-group">
                 <label for="name">Full Name (Owner)</label>
-                <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+                <input type="text" id="name" name="name" placeholder="Enter your full name" value="<%= typeof name != 'undefined' ? name : '' %>" required>
             </div>
 
             <div class="form-group">
                 <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" placeholder="08012345678" required>
+                <input type="tel" id="phone" name="phone" placeholder="08012345678" value="<%= typeof phone != 'undefined' ? phone : '' %>" required>
                 <small style="color: var(--text-muted); font-size: 11px;">This will be used for critical account alerts.</small>
             </div>
 
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="business@example.com" required>
+                <input type="email" id="email" name="email" placeholder="business@example.com" value="<%= typeof email != 'undefined' ? email : '' %>" required>
             </div>
 
             <div class="form-group">

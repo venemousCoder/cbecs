@@ -43,11 +43,8 @@ app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 
-// TODO: Configure Passport local strategy
-// const User = require('./models/user'); // Assuming you have a User model
-// passport.use(new LocalStrategy(User.authenticate()));
-// passport.serializeUser(User.serializeUser());
-// passport.deserializeUser(User.deserializeUser());
+// Passport Config
+require('./config/passport')(passport);
 
 // Global variables for views
 app.use((req, res, next) => {

@@ -13,16 +13,25 @@
                 <%= error %>
             </div>
         <% } %>
+        
+        <!-- Validation Errors -->
+        <% if (typeof errors !== 'undefined') { %>
+            <% errors.forEach(function(error) { %>
+                <div style="color: var(--danger); background: #ffebee; padding: 10px; border-radius: var(--radius-sm); margin-bottom: 15px; font-size: 13px; text-align: center;">
+                    <%= error.msg %>
+                </div>
+            <% }); %>
+        <% } %>
 
         <form action="/signup" method="POST" class="auth-form">
             <div class="form-group">
                 <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+                <input type="text" id="name" name="name" placeholder="Enter your full name" value="<%= typeof name != 'undefined' ? name : '' %>" required>
             </div>
 
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="name@example.com" required>
+                <input type="email" id="email" name="email" placeholder="name@example.com" value="<%= typeof email != 'undefined' ? email : '' %>" required>
             </div>
 
             <div class="form-group">
