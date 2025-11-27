@@ -1,0 +1,61 @@
+<%- include('partials/header', { extraCss: 'auth.css', title: 'SME Registration - CBECS' }) %>
+
+<div class="auth-container">
+    <div class="auth-card" style="max-width: 500px; border-top: 4px solid var(--primary);">
+        <div class="auth-header">
+            <h2>Register Your Business</h2>
+            <p>Start selling products, services, or food on CBECS today.</p>
+        </div>
+
+        <!-- Flash Messages -->
+        <% if (locals.error && locals.error.length > 0) { %>
+            <div style="color: var(--danger); background: #ffebee; padding: 10px; border-radius: var(--radius-sm); margin-bottom: 15px; font-size: 13px; text-align: center;">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form action="/business/register" method="POST" class="auth-form">
+            <input type="hidden" name="role" value="sme_owner">
+            
+            <div class="form-group">
+                <label for="name">Full Name (Owner)</label>
+                <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" placeholder="08012345678" required>
+                <small style="color: var(--text-muted); font-size: 11px;">This will be used for critical account alerts.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="business@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Create a strong password" required minlength="6">
+            </div>
+
+            <div class="form-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input type="password" id="confirm-password" name="confirmPassword" placeholder="Confirm your password" required minlength="6">
+            </div>
+            
+            <div style="margin-bottom: 20px; font-size: 12px; color: var(--text-muted);">
+                By registering, you agree to the <a href="#" style="color: var(--primary);">SME Terms of Service</a>.
+            </div>
+
+            <button type="submit" class="btn-auth">Register Business Account</button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a href="/login">Sign In</a>
+            <br><br>
+            Looking to shop? <a href="/signup">Create a Consumer Account</a>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

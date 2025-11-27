@@ -78,6 +78,21 @@ function getHomePage(req, res) {
     });
 }
 
+function getLoginPage(req, res) {
+    res.render("login");
+}
+
+function getSignupPage(req, res) {
+    res.render("signup");
+}
+
+function getBusinessSignupPage(req, res) {
+    res.render("signup-business");
+}
+
 module.exports = {
-    getHomePage
+    getHomePage,
+    getLoginPage,
+    getSignupPage,
+    getBusinessSignupPage
 };

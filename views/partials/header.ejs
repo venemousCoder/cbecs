@@ -11,6 +11,9 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/public/css/home.css">
+    <% if (typeof extraCss !== 'undefined' && extraCss) { %>
+        <link rel="stylesheet" href="/public/css/<%= extraCss %>">
+    <% } %>
     
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -21,7 +24,7 @@
         <div class="top-bar">
             <div class="container">
                 <div class="top-left">
-                    <a href="#" class="top-bar-link"><i class="fas fa-store"></i> Register Your Business (SME)</a>
+                    <a href="/business/register" class="top-bar-link"><i class="fas fa-store"></i> Register Your Business (SME)</a>
                 </div>
                 <div class="top-right" style="display: flex; gap: 20px;">
                     <a href="#" class="top-bar-link">Download App</a>

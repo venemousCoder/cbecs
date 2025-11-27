@@ -1,0 +1,46 @@
+✦ I have successfully created the login and signup pages, ensuring they are
+  responsive, accessible, and visually consistent with your existing design.
+
+  Here is a summary of the changes:
+   1. Created `public/css/auth.css`: A dedicated stylesheet for authentication
+      pages that uses your existing color palette and variables (e.g., --primary,
+      --radius-md) to ensure a cohesive look. It features a centered card layout
+      that adapts to different screen sizes.
+   2. Created `views/login.ejs`: A clean, user-friendly login form including
+      "Remember me" and "Forgot Password" options.
+   3. Created `views/signup.ejs`: A registration form with validation attributes
+      (e.g., required, minlength) for better accessibility and user feedback.
+   4. Updated `views/partials/header.ejs`: Modified the header to accept an
+      optional extraCss variable, allowing the auth pages to load their specific
+      styles without bloating the main stylesheet.
+   5. Updated Controller & Routes: Added getLoginPage and getSignupPage to
+      controllers/home.controller.js and registered the /login and /signup routes
+      in routes/home.routes.js.
+
+  You can now access these pages at /login and /signup.
+
+   I've created a dedicated signup page for businesses that captures the necessary
+  information as outlined in the context.
+
+  Summary of changes:
+
+   1. User Model (`models/user.js`): Defined the Mongoose schema to include the
+      role field (supporting 'consumer', 'sme_owner', etc.) and a phone field,
+      which is critical for business accounts.
+   2. Business Signup View (`views/signup-business.ejs`): Created a new template
+      specifically for SMEs. It features:
+       * A distinct "Register Your Business" header.
+       * A Phone Number field (essential for SMEs).
+       * A hidden input to automatically set the role to sme_owner.
+       * Links back to the consumer signup and login pages.
+   3. Controller & Routes:
+       * Added getBusinessSignupPage to controllers/home.controller.js.
+       * Registered the route /business/register in routes/home.routes.js.
+   4. Navigation Updates:
+       * Updated the "Register Your Business (SME)" link in the top bar of the
+         header to point to the new page.
+       * Added a cross-link in the standard consumer signup page ("Want to sell on
+         CBECS? Register as a Business") to ensure users find the right form.
+
+  You can now access the business registration page at /business/register.
+
