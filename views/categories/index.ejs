@@ -1,0 +1,24 @@
+<%- include('../partials/header') %>
+
+<div class="container" style="padding: 40px 20px; min-height: 60vh;">
+    <div class="section-header" style="text-align: center; margin-bottom: 40px;">
+        <h2 class="section-title" style="font-size: 28px; margin-bottom: 10px;">Browse by Category</h2>
+        <p style="color: var(--text-muted);">Explore products and services from Kano's best SMEs</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 1000px; margin: 0 auto;">
+        <% categories.forEach(cat => { %>
+            <a href="/categories/<%= cat.id %>" style="text-decoration: none; color: inherit; transition: transform 0.2s;">
+                <div style="background: white; padding: 40px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); text-align: center; height: 100%; border: 1px solid transparent; transition: all 0.3s;" onmouseover="this.style.borderColor='var(--primary)'; this.style.transform='translateY(-5px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+                    <div style="width: 80px; height: 80px; background: var(--bg-input); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; color: var(--primary);">
+                        <i class="fas <%= cat.icon %>"></i>
+                    </div>
+                    <h3 style="color: var(--secondary); margin-bottom: 10px;"><%= cat.name %></h3>
+                    <p style="color: var(--text-muted); font-size: 14px;"><%= cat.desc %></p>
+                </div>
+            </a>
+        <% }) %>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

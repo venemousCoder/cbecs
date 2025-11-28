@@ -161,3 +161,64 @@
 
   The link in the Dashboard (views/sme/dashboard.ejs) that points to
   /sme/business/<%= biz._id %>/manage will now work correctly.
+
+  ✦ I have implemented the public-facing browsing and searching system.
+
+  Summary of Changes:
+
+   1. Created `controllers/consumer.controller.js`:
+       * getAllCategories: Renders the main category selection page.
+       * getCategoryListings: Fetches and renders listings filtered by type
+         ('retail'/'product', 'service', 'food').
+       * getListingDetails: Fetches a specific listing by ID, showing details and
+         related items.
+       * searchListings: Implements a case-insensitive regex search on listing
+         names and descriptions.
+
+   2. Updated `routes/home.routes.js`:
+       * Added routes: /categories, /categories/:id, /listing/:id, and /search
+         pointing to the new consumer controller.
+
+   3. Created Views:
+       * views/categories/index.ejs: A clean grid layout displaying the three main
+         business categories.
+       * views/categories/show.ejs: Displays a grid of listings for a specific
+         category.
+       * views/listings/show.ejs: A detailed product/service page with image,
+         description, price, stock status, and placeholder "Add to Cart"/"Book Now"
+         buttons.
+       * views/search.ejs: Displays search results or a "No Results" message.
+
+  You can now browse the platform as a guest, view products, and search for items
+  without needing to log in
+
+  ✦ I have implemented the persistent Cart and Checkout system.
+
+  Summary of Changes:
+
+   1. Created `models/order.js`: A schema to store order details (items, total
+      amount, status).
+   2. Created `controllers/cart.controller.js`:
+       * addToCart: Adds items to req.session.cart, handling quantity updates for
+         existing items.
+       * getCart: Renders the cart view.
+       * removeFromCart: Removes items and updates totals.
+       * postCheckout: Checks authentication, creates an Order record, clears the
+         session cart, and redirects.
+   3. Created `routes/cart.routes.js`: Defined routes for /cart (GET), /cart/add
+      (POST), /cart/remove/:id (POST), and /checkout (POST, protected).
+   4. Updated `routes/index.routes.js`: Mounted the cart routes.
+   5. Created `views/cart.ejs`: Displays the cart items, image, price, quantity,
+      subtotal, and a checkout button.
+   6. Updated `views/listings/show.ejs`: "Add to Cart" and "Book Now" buttons now
+      function as forms submitting to /cart/add.
+   7. Updated `views/partials/header.ejs`:
+       * The Cart icon now shows a dynamic badge count based on the session.
+       * Authentication links (Sign In / Logout / Dashboard) are now dynamic based
+         on login status.
+   8. Updated `app.js`: Added res.locals.cart = req.session.cart so the header can
+      access cart data globally.
+
+  The system now supports adding items to the cart as a guest, viewing the cart,
+  and requiring login only upon checkout. Checkout creates a persistent order in
+  the database.

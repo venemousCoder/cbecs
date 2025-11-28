@@ -51,20 +51,30 @@
 
                 <!-- User Actions -->
                 <div class="user-actions">
-                    <a href="/login" class="user-action">
-                        <div style="position: relative;">
+                    <% if (currentUser) { %>
+                        <a href="/logout" class="user-action">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                        <% if (currentUser.role === 'sme_owner') { %>
+                            <a href="/sme/dashboard" class="user-action">
+                                <i class="fas fa-store"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        <% } %>
+                    <% } else { %>
+                        <a href="/login" class="user-action">
                             <i class="far fa-user"></i>
-                        </div>
-                        <span>Sign In</span>
-                    </a>
-                    <a href="/bookings" class="user-action">
-                        <i class="fas fa-calendar-check"></i>
-                        <span>Bookings</span>
-                    </a>
+                            <span>Sign In</span>
+                        </a>
+                    <% } %>
+                    
                     <a href="/cart" class="user-action" style="position: relative;">
                         <div style="position: relative;">
                             <i class="fas fa-shopping-cart"></i>
-                            <span class="cart-count-badge">2</span>
+                            <% if (locals.cart && locals.cart.totalQty > 0) { %>
+                                <span class="cart-count-badge"><%= locals.cart.totalQty %></span>
+                            <% } %>
                         </div>
                         <span>Cart</span>
                     </a>

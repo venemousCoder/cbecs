@@ -1,10 +1,17 @@
 const router = require('express').Router();
 const homeController = require('../controllers/home.controller');
 const authController = require('../controllers/auth.controller');
+const consumerController = require('../controllers/consumer.controller');
 const { ensureAuthenticated, forwardAuthenticated } = require('../middleware/auth');
 
 // Home route
 router.get('/', homeController.getHomePage);
+
+// Consumer / Public Routes
+router.get('/categories', consumerController.getAllCategories);
+router.get('/categories/:id', consumerController.getCategoryListings);
+router.get('/listing/:id', consumerController.getListingDetails);
+router.get('/search', consumerController.searchListings);
 
 // Auth routes - Pages
 router.get('/login', forwardAuthenticated, homeController.getLoginPage);
