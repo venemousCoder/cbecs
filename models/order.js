@@ -13,6 +13,11 @@ const OrderSchema = new Schema({
             ref: 'Listing',
             required: true
         },
+        business: {
+            type: Schema.Types.ObjectId,
+            ref: 'Business',
+            required: true
+        },
         quantity: {
             type: Number,
             required: true,
@@ -22,16 +27,16 @@ const OrderSchema = new Schema({
             type: Number,
             required: true
         },
-        name: String // Snapshot of name in case listing changes
+        name: String,
+        status: {
+            type: String,
+            enum: ['pending', 'processing', 'completed', 'cancelled'],
+            default: 'pending'
+        }
     }],
     totalAmount: {
         type: Number,
         required: true
-    },
-    status: {
-        type: String,
-        enum: ['pending', 'processing', 'completed', 'cancelled'],
-        default: 'pending'
     },
     createdAt: {
         type: Date,

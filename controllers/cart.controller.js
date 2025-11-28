@@ -7,7 +7,7 @@ exports.addToCart = async (req, res) => {
     const quantity = parseInt(req.body.quantity) || 1;
 
     try {
-        const listing = await Listing.findById(listingId);
+        const listing = await Listing.findById(listingId).populate('business');
         if (!listing) {
             req.flash('error', 'Listing not found');
             return res.redirect('back');
@@ -32,12 +32,13 @@ exports.addToCart = async (req, res) => {
         } else {
             cart.items.push({
                 listingId: listing._id,
+                businessId: listing.business._id, // Save Business ID
                 name: listing.name,
                 price: listing.price,
                 image: listing.image,
                 qty: quantity,
                 type: listing.type,
-                businessName: listing.business ? listing.business.name : 'Unknown Business' // Assumes populate might be needed if we want this, but for now simple
+                businessName: listing.business ? listing.business.name : 'Unknown Business'
             });
         }
 
@@ -108,12 +109,13 @@ exports.postCheckout = async (req, res) => {
             user: req.user._id,
             items: cart.items.map(item => ({
                 listing: item.listingId,
+                business: item.businessId, // Using the saved businessId
                 quantity: item.qty,
                 price: item.price,
-                name: item.name
+                name: item.name,
+                status: 'pending'
             })),
-            totalAmount: cart.totalPrice,
-            status: 'pending'
+            totalAmount: cart.totalPrice
         });
 
         await order.save();
@@ -122,7 +124,7 @@ exports.postCheckout = async (req, res) => {
         delete req.session.cart;
 
         req.flash('success', 'Order placed successfully!');
-        res.redirect('/orders'); // Redirect to orders page (to be implemented)
+        res.redirect('/orders'); 
 
     } catch (err) {
         console.error(err);

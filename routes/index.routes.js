@@ -2,9 +2,14 @@ const router = require('express').Router();
 const homeRouter = require('./home.routes');
 const smeRouter = require('./sme.routes');
 const cartRouter = require('./cart.routes');
+const orderController = require('../controllers/order.controller');
+const { ensureAuthenticated } = require('../middleware/auth');
 
 router.use('/', homeRouter);
-router.use('/', cartRouter); // Mount at root so /cart works
+router.use('/', cartRouter);
+router.get('/orders', ensureAuthenticated, orderController.getConsumerOrders);
+router.get('/bookings', ensureAuthenticated, orderController.getConsumerOrders); // Alias for bookings
+
 router.use('/sme', smeRouter);
 
 module.exports = router;

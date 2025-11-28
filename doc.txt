@@ -222,3 +222,46 @@
   The system now supports adding items to the cart as a guest, viewing the cart,
   and requiring login only upon checkout. Checkout creates a persistent order in
   the database.
+
+  ✦ I have implemented the full Order Management system for both consumers and SMEs.
+
+  Summary of Changes:
+
+   1. Updated `models/order.js`:
+       * Modified the schema to store business ID and status at the item level.
+         This allows a single order to contain items from multiple SMEs, where each
+         SME can manage the status of their own items independently.
+
+   2. Updated `controllers/cart.controller.js`:
+       * Updated addToCart to save the businessId in the session cart.
+       * Updated postCheckout to populate the new item-level fields (business,
+         status) when saving the order.
+
+   3. Consumer Order History:
+       * Created controllers/order.controller.js: Added getConsumerOrders to fetch
+         and display orders for the logged-in user.
+       * Created views/orders/index.ejs: A clean, card-based layout showing order
+         history with item details and status badges.
+       * Updated routes/index.routes.js: Added /orders and /bookings routes.
+
+   4. SME Order Dashboard:
+       * Updated controllers/sme.controller.js:
+           * Added getSmeOrders: Fetches orders containing items belonging to the
+             SME's businesses. It filters the items so the SME only sees what they
+             sold.
+           * Added updateOrderItemStatus: Allows SMEs to change the status of
+             individual items (Pending -> Processing -> Completed) via a dropdown.
+       * Created views/sme/orders/index.ejs: A dashboard view for SMEs to see
+         incoming orders, customer details, and manage item status.
+       * Updated routes/sme.routes.js: Added routes for viewing orders and updating
+         status.
+
+   5. UI/UX Integration:
+       * Updated views/sme/dashboard.ejs: Added a "Orders" button to the header for
+         quick access.
+       * Updated views/sme/manage-business.ejs: Activated the "Orders" link in the
+         sidebar/module list.
+
+  The system is now fully functional for the "Order" lifecycle: Consumer adds to
+  cart -> Checkout -> Order Saved -> Consumer sees history -> SME sees order in
+  dashboard -> SME updates status -> Consumer sees updated status.

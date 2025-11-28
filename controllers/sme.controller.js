@@ -1,4 +1,5 @@
 const Business = require('../models/business');
+const Order = require('../models/order');
 
 // Render the Create Business Page
 exports.getCreateBusinessPage = (req, res) => {
@@ -28,9 +29,6 @@ exports.createBusiness = async (req, res) => {
     }
 
     try {
-        // Check if user already has a business (Optional constraint, enforcing 1 for now for simplicity as per some interpretations, or allowing multiple. 
-        // Robot.md says "SME owner can operate multiple businesses". So we won't restrict.)
-        
         const newBusiness = new Business({
             owner: req.user._id,
             name,
@@ -57,7 +55,7 @@ exports.createBusiness = async (req, res) => {
     }
 };
 
-// Dashboard (Placeholder moved here)
+// Dashboard
 exports.getDashboard = async (req, res) => {
     try {
         const businesses = await Business.find({ owner: req.user._id });
@@ -134,7 +132,6 @@ exports.deleteBusiness = async (req, res) => {
             return res.redirect('/sme/dashboard');
         }
         
-        // Note: Ideally we should also delete all associated listings and images here
         await Business.deleteOne({ _id: business._id });
         
         req.flash('success', 'Business deleted successfully');
@@ -143,5 +140,81 @@ exports.deleteBusiness = async (req, res) => {
         console.error(err);
         req.flash('error', 'Error deleting business');
         res.redirect('/sme/dashboard');
+    }
+};
+
+// --- SME Order Management ---
+
+// Get SME Orders
+exports.getSmeOrders = async (req, res) => {
+    try {
+        // 1. Find all businesses owned by the user
+        const businesses = await Business.find({ owner: req.user._id });
+        const businessIds = businesses.map(b => b._id);
+
+        // 2. Find orders that contain items from these businesses
+        // We filter the 'items' array in the query to only return orders that HAVE such items
+        const orders = await Order.find({
+            'items.business': { $in: businessIds }
+        })
+        .populate('user', 'name email phone') // Get customer details
+        .populate('items.listing')
+        .sort({ createdAt: -1 });
+
+        // 3. Prepare a friendly structure for the view
+        // Since an order might have items from other businesses, we should visually separate/filter them in the view or here.
+        // For simplicity, we'll pass the list of owned businessIds to the view so the view can selectively render the items.
+
+        res.render('sme/orders/index', {
+            title: 'Incoming Orders',
+            orders,
+            businessIds: businessIds.map(id => id.toString()),
+            user: req.user
+        });
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Unable to fetch orders');
+        res.redirect('/sme/dashboard');
+    }
+};
+
+// Update Order Item Status
+exports.updateOrderItemStatus = async (req, res) => {
+    try {
+        const { orderId, itemId, status } = req.body;
+
+        // Find the order
+        const order = await Order.findById(orderId);
+        if (!order) {
+            req.flash('error', 'Order not found');
+            return res.redirect('/sme/orders');
+        }
+
+        // Find the specific item
+        const item = order.items.id(itemId);
+        if (!item) {
+            req.flash('error', 'Item not found in order');
+            return res.redirect('/sme/orders');
+        }
+
+        // Verify ownership: The item's business must belong to the current user
+        const business = await Business.findOne({ _id: item.business, owner: req.user._id });
+        if (!business) {
+            req.flash('error', 'Unauthorized access to this order item');
+            return res.redirect('/sme/orders');
+        }
+
+        // Update status
+        item.status = status;
+        await order.save();
+
+        req.flash('success', 'Order status updated');
+        res.redirect('/sme/orders');
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Error updating status');
+        res.redirect('/sme/orders');
     }
 };

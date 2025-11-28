@@ -1,0 +1,102 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <div class="section-header">
+        <h3 class="section-title">Incoming Orders & Bookings</h3>
+        <div class="user-actions">
+            <a href="/sme/dashboard" class="slide-btn" style="padding: 8px 20px; font-size: 13px; background: transparent; color: var(--secondary); border: 1px solid var(--border);">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (locals.success && locals.success.length > 0) { %>
+        <div style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= success %>
+        </div>
+    <% } %>
+    <% if (locals.error && locals.error.length > 0) { %>
+        <div style="color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <% if (orders.length === 0) { %>
+        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <h3 style="color: var(--secondary);">No New Orders</h3>
+            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto;">You haven't received any orders yet. Promote your listings!</p>
+        </div>
+    <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 25px;">
+            <% orders.forEach(order => { %>
+                <!-- Only render order if it has items relevant to this SME -->
+                <% 
+                    // Filter items that belong to this SME's businesses
+                    const myItems = order.items.filter(item => businessIds.includes(item.business.toString()));
+                %>
+                
+                <% if (myItems.length > 0) { %>
+                    <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; border: 1px solid #eee;">
+                        <!-- Customer Header -->
+                        <div style="padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <span style="font-size: 12px; color: var(--text-muted); display: block;">CUSTOMER</span>
+                                <span style="font-weight: 600; color: var(--secondary);"><%= order.user.name %></span>
+                                <span style="font-size: 12px; color: var(--text-muted);"> (<%= order.user.phone || order.user.email %>)</span>
+                            </div>
+                            <div>
+                                <span style="font-size: 12px; color: var(--text-muted); display: block;">ORDER DATE</span>
+                                <span style="font-weight: 600; color: var(--secondary);"><%= new Date(order.createdAt).toLocaleString() %></span>
+                            </div>
+                        </div>
+
+                        <!-- Items List -->
+                        <div style="padding: 0;">
+                            <% myItems.forEach(item => { %>
+                                <div style="display: flex; flex-wrap: wrap; align-items: center; padding: 20px; border-bottom: 1px solid #f0f0f0; gap: 20px;">
+                                    <!-- Item Info -->
+                                    <div style="flex: 2; min-width: 200px; display: flex; gap: 15px;">
+                                        <div style="width: 60px; height: 60px; background: #f9fafb; border-radius: 4px; overflow: hidden; flex-shrink: 0;">
+                                            <img src="<%= item.listing ? item.listing.image : 'https://placehold.co/60' %>" alt="<%= item.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div>
+                                            <h4 style="margin: 0 0 5px 0; font-size: 16px; color: var(--secondary);"><%= item.name %></h4>
+                                            <p style="margin: 0; font-size: 13px; color: var(--text-muted);">
+                                                Quantity: <strong><%= item.quantity %></strong> | Price: <strong>R<%= item.price.toFixed(2) %></strong>
+                                            </p>
+                                            <!-- Display Listing Type specific info if needed -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Status & Actions -->
+                                    <div style="flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                                        <form action="/sme/orders/update-status" method="POST" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                                            <input type="hidden" name="orderId" value="<%= order._id %>">
+                                            <input type="hidden" name="itemId" value="<%= item._id %>">
+                                            
+                                            <select name="status" class="form-control" style="width: auto; padding: 5px 10px; font-size: 13px; margin: 0;" onchange="this.form.submit()">
+                                                <option value="pending" <%= item.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                                                <option value="processing" <%= item.status === 'processing' ? 'selected' : '' %>>Processing</option>
+                                                <option value="completed" <%= item.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                                                <option value="cancelled" <%= item.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                            </select>
+                                            
+                                            <!-- Visual Indicator -->
+                                            <div style="width: 10px; height: 10px; border-radius: 50%; 
+                                                background: <%= item.status === 'completed' ? '#22c55e' : (item.status === 'cancelled' ? '#ef4444' : '#f97316') %>;">
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                <% } %>
+            <% }) %>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../../partials/footer') %>
