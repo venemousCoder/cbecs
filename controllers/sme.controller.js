@@ -75,3 +75,73 @@ exports.getDashboard = async (req, res) => {
         });
     }
 };
+
+// Get Manage Business Page
+exports.getManageBusinessPage = async (req, res) => {
+    try {
+        const business = await Business.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!business) {
+            req.flash('error', 'Business not found or unauthorized');
+            return res.redirect('/sme/dashboard');
+        }
+        res.render('sme/manage-business', {
+            title: `Manage ${business.name}`,
+            business,
+            user: req.user
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/sme/dashboard');
+    }
+};
+
+// Update Business
+exports.updateBusiness = async (req, res) => {
+    try {
+        const { name, address, description } = req.body;
+        const business = await Business.findOne({ _id: req.params.id, owner: req.user._id });
+        
+        if (!business) {
+            req.flash('error', 'Business not found');
+            return res.redirect('/sme/dashboard');
+        }
+
+        business.name = name;
+        business.address = address;
+        business.description = description;
+
+        if (req.file) {
+            business.logo = `/public/uploads/logos/${req.file.filename}`;
+        }
+
+        await business.save();
+        req.flash('success', 'Business profile updated');
+        res.redirect(`/sme/business/${business._id}/manage`);
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Error updating business');
+        res.redirect(`/sme/business/${req.params.id}/manage`);
+    }
+};
+
+// Delete Business
+exports.deleteBusiness = async (req, res) => {
+    try {
+        const business = await Business.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!business) {
+            req.flash('error', 'Business not found');
+            return res.redirect('/sme/dashboard');
+        }
+        
+        // Note: Ideally we should also delete all associated listings and images here
+        await Business.deleteOne({ _id: business._id });
+        
+        req.flash('success', 'Business deleted successfully');
+        res.redirect('/sme/dashboard');
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Error deleting business');
+        res.redirect('/sme/dashboard');
+    }
+};

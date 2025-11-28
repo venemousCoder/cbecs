@@ -59,6 +59,9 @@ router.use(ensureRole('sme_owner'));
 router.get('/dashboard', smeController.getDashboard);
 router.get('/create-business', smeController.getCreateBusinessPage);
 router.post('/create-business', logoUpload.single('logo'), smeController.createBusiness);
+router.get('/business/:id/manage', smeController.getManageBusinessPage);
+router.post('/business/:id/update', logoUpload.single('logo'), smeController.updateBusiness);
+router.post('/business/:id/delete', smeController.deleteBusiness);
 
 // --- Listing Routes ---
 router.get('/listings', listingController.getListings);

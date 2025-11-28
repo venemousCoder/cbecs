@@ -1,0 +1,73 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <div class="section-header">
+        <h3 class="section-title">My Listings</h3>
+        <div class="user-actions">
+            <a href="/sme/dashboard" class="slide-btn" style="padding: 8px 20px; font-size: 13px; background: transparent; color: var(--secondary); border: 1px solid var(--border);">Back to Dashboard</a>
+            <a href="/sme/listings/add" class="slide-btn" style="padding: 8px 20px; font-size: 13px;">+ Add Listing</a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (locals.success && locals.success.length > 0) { %>
+        <div style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= success %>
+        </div>
+    <% } %>
+    <% if (locals.error && locals.error.length > 0) { %>
+        <div style="color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <% if (listings.length === 0) { %>
+        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
+                <i class="fas fa-box-open"></i>
+            </div>
+            <h3 style="color: var(--secondary);">No Listings Found</h3>
+            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 30px;">You haven't added any products or services yet.</p>
+            <a href="/sme/listings/add" class="search-button" style="display: inline-block; text-decoration: none;">Add My First Listing</a>
+        </div>
+    <% } else { %>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;">
+            <% listings.forEach(listing => { %>
+                <div class="product-card" style="flex-direction: row; gap: 15px; align-items: center;">
+                    <div style="width: 80px; height: 80px; border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0; border: 1px solid #eee;">
+                        <img src="<%= listing.image %>" alt="<%= listing.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="type-badge <%= listing.type %>" style="position: static; display: inline-block; margin-bottom: 5px; font-size: 10px; padding: 2px 6px;">
+                            <%= listing.type.toUpperCase() %>
+                        </div>
+                        <h4 style="margin: 0 0 5px 0; font-size: 16px; color: var(--secondary);"><%= listing.name %></h4>
+                        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-muted); font-weight: 600;"><%= listing.business.name %></p>
+                        <p style="margin: 0; font-size: 14px; color: var(--primary); font-weight: bold;">
+                            R<%= listing.price.toFixed(2) %>
+                            <% if (listing.type === 'service') { %>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">/ <%= listing.duration %> min</span>
+                            <% } else { %>
+                                <span style="font-size: 11px; color: <%= listing.stock > 0 ? 'var(--success)' : 'var(--danger)' %>; font-weight: normal;">
+                                    (<%= listing.stock %> in stock)
+                                </span>
+                            <% } %>
+                        </p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <a href="/sme/listings/<%= listing._id %>/edit" class="action-btn" style="width: auto; padding: 6px 10px; border-radius: 4px; font-size: 12px; background: var(--bg-input); text-decoration: none; color: var(--secondary); text-align: center;" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form action="/sme/listings/<%= listing._id %>/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this listing?');" style="margin: 0;">
+                            <button type="submit" class="action-btn" style="width: 100%; padding: 6px 10px; border-radius: 4px; font-size: 12px; background: #fee2e2; color: #dc2626; border: none; cursor: pointer;" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

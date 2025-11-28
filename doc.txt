@@ -104,3 +104,60 @@
   You can now log in as an SME owner (or register one via /business/register) and
   navigate to /sme/dashboard. From there, you can click "Create New Business" to
   onboard a new shop.
+
+  ✦ I have implemented the listings system by creating the necessary EJS views that
+  correspond to the existing controller logic and routes.
+
+  Summary of changes:
+   1. Created `views/sme/listings/index.ejs`:
+       * Displays a grid of the SME's listings.
+       * Shows images, prices, and stock/duration details.
+       * Includes "Edit" and "Delete" actions for each listing.
+   2. Created `views/sme/listings/add.ejs`:
+       * Provides a form to add new listings.
+       * Includes a dynamic dropdown for selecting the Business.
+       * Feature: Automatically toggles between "Stock" (for Retail/Food) and
+         "Duration" (for Service) input fields based on the selected business
+         category using client-side JavaScript.
+   3. Created `views/sme/listings/edit.ejs`:
+       * Provides a form to edit existing listings.
+       * Pre-fills current data.
+       * Shows the appropriate fields (Stock vs Duration) based on the listing's
+         type (which is fixed upon creation).
+
+  The system now supports:
+   * Viewing all listings at /sme/listings
+   * Adding a listing at /sme/listings/add (handling the Product vs Service
+     distinction)
+   * Editing a listing at /sme/listings/:id/edit
+   * Deleting a listing via /sme/listings/:id/delete
+
+  You can now start the server (npm start) and navigate to the SME Dashboard to
+  manage listings.
+
+
+✦ I have implemented the "Manage Business" feature.
+
+  Summary of changes:
+   1. Updated `routes/sme.routes.js`:
+       * Added GET /sme/business/:id/manage to display the management page.
+       * Added POST /sme/business/:id/update to handle business profile updates
+         (name, address, description, logo).
+       * Added POST /sme/business/:id/delete to handle business deletion.
+   2. Updated `controllers/sme.controller.js`:
+       * Implemented getManageBusinessPage: Fetches the business data and renders
+         the view.
+       * Implemented updateBusiness: Updates the business details and handles logo
+         uploads.
+       * Implemented deleteBusiness: Deletes the business (Note: In a production
+         app, this should also recursively delete listings, images, orders, etc.,
+         but for now it removes the business document).
+   3. Created `views/sme/manage-business.ejs`:
+       * Displays the "Business Settings" form.
+       * Includes "Quick Actions" links to Add/View listings.
+       * Includes placeholders for future "Operators" and "Orders" modules, as per
+         the system overview in @robot.md.
+       * Includes a "Delete Business" button with confirmation.
+
+  The link in the Dashboard (views/sme/dashboard.ejs) that points to
+  /sme/business/<%= biz._id %>/manage will now work correctly.
