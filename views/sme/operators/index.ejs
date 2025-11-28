@@ -1,0 +1,68 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <div class="section-header">
+        <h3 class="section-title">Operators: <%= business.name %></h3>
+        <div class="user-actions">
+            <a href="/sme/business/<%= business._id %>/manage" class="slide-btn" style="padding: 8px 20px; font-size: 13px; background: transparent; color: var(--secondary); border: 1px solid var(--border);"><i class="fas fa-arrow-left"></i> Back</a>
+            <a href="/sme/business/<%= business._id %>/operators/add" class="slide-btn" style="padding: 8px 20px; font-size: 13px;">+ Add Operator</a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (locals.success && locals.success.length > 0) { %>
+        <div style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <% if (operators.length === 0) { %>
+        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
+                <i class="fas fa-users-slash"></i>
+            </div>
+            <h3 style="color: var(--secondary);">No Operators</h3>
+            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 30px;">You haven't assigned any operators to this business yet.</p>
+            <a href="/sme/business/<%= business._id %>/operators/add" class="search-button" style="display: inline-block; text-decoration: none;">Add First Operator</a>
+        </div>
+    <% } else { %>
+        <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f9fafb; text-align: left;">
+                        <th style="padding: 15px 20px; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Name</th>
+                        <th style="padding: 15px 20px; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Contact</th>
+                        <th style="padding: 15px 20px; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Joined</th>
+                        <th style="padding: 15px 20px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% operators.forEach(op => { %>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 15px 20px;">
+                                <strong style="color: var(--secondary);"><%= op.name %></strong>
+                            </td>
+                            <td style="padding: 15px 20px; font-size: 14px;">
+                                <div style="margin-bottom: 3px;"><%= op.email %></div>
+                                <div style="color: var(--text-muted);"><%= op.phone %></div>
+                            </td>
+                            <td style="padding: 15px 20px; font-size: 13px; color: var(--text-muted);">
+                                <%= new Date(op.createdAt).toLocaleDateString() %>
+                            </td>
+                            <td style="padding: 15px 20px; text-align: right;">
+                                <form action="/sme/business/<%= business._id %>/operators/remove" method="POST" onsubmit="return confirm('Are you sure you want to remove this operator?');">
+                                    <input type="hidden" name="operatorId" value="<%= op._id %>">
+                                    <button type="submit" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 13px;">
+                                        <i class="fas fa-trash-alt"></i> Remove
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

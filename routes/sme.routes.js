@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const smeController = require('../controllers/sme.controller');
 const listingController = require('../controllers/listing.controller');
+const operatorController = require('../controllers/operator.controller');
 const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -66,6 +67,12 @@ router.post('/business/:id/delete', smeController.deleteBusiness);
 // --- Order Routes ---
 router.get('/orders', smeController.getSmeOrders);
 router.post('/orders/update-status', smeController.updateOrderItemStatus);
+
+// --- Operator Routes ---
+router.get('/business/:id/operators/add', operatorController.getAddOperatorPage);
+router.post('/business/:id/operators/add', operatorController.createOperator);
+router.get('/business/:id/operators', operatorController.getOperatorsList);
+router.post('/business/:id/operators/remove', operatorController.removeOperator);
 
 // --- Listing Routes ---
 router.get('/listings', listingController.getListings);

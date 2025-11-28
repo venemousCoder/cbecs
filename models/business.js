@@ -30,6 +30,10 @@ const BusinessSchema = new Schema({
         type: String, // Path to the uploaded file
         default: '/public/assets/default-business.png'
     },
+    operators: [{
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     createdAt: {
         type: Date,
         default: Date.now

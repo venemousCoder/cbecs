@@ -1,0 +1,89 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <div class="section-header">
+        <h3 class="section-title">Operator Dashboard: <%= business.name %></h3>
+        <div class="user-actions">
+            <span style="font-weight: 600; color: var(--text-muted); margin-right: 10px;">Hi, <%= user.name %></span>
+            <a href="/logout" class="slide-btn" style="padding: 8px 20px; font-size: 13px; background: #fee2e2; color: #dc2626; border: none;">Logout</a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (locals.success && locals.success.length > 0) { %>
+        <div style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= success %>
+        </div>
+    <% } %>
+    <% if (locals.error && locals.error.length > 0) { %>
+        <div style="color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <% if (orders.length === 0) { %>
+        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 style="color: var(--secondary);">All Caught Up!</h3>
+            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto;">There are no pending orders or bookings in your queue.</p>
+        </div>
+    <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 25px;">
+            <% orders.forEach(order => { %>
+                <!-- Filter items belonging to THIS business -->
+                <% const myItems = order.items.filter(item => item.business.toString() === business._id.toString()); %>
+                
+                <% if (myItems.length > 0) { %>
+                    <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; border-left: 5px solid var(--primary);">
+                        <div style="padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
+                             <div>
+                                <span style="font-size: 12px; color: var(--text-muted);">CUSTOMER</span><br>
+                                <strong style="color: var(--secondary);"><%= order.user.name %></strong> 
+                                <a href="tel:<%= order.user.phone %>" style="font-size: 12px; color: var(--primary); text-decoration: none;"><i class="fas fa-phone"></i> Call</a>
+                             </div>
+                             <div style="text-align: right;">
+                                <span style="font-size: 12px; color: var(--text-muted);">DATE</span><br>
+                                <span style="font-size: 13px;"><%= new Date(order.createdAt).toLocaleDateString() %></span>
+                             </div>
+                        </div>
+
+                        <div style="padding: 0;">
+                            <% myItems.forEach(item => { %>
+                                <div style="padding: 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                                    <div style="display: flex; align-items: center; gap: 15px; flex: 2;">
+                                        <div style="width: 50px; height: 50px; background: #f9fafb; border-radius: 4px; overflow: hidden;">
+                                            <img src="<%= item.listing ? item.listing.image : '' %>" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div>
+                                            <h4 style="margin: 0 0 5px 0; font-size: 16px;"><%= item.name %></h4>
+                                            <div style="font-size: 12px; color: var(--text-muted);">Qty: <%= item.quantity %></div>
+                                        </div>
+                                    </div>
+
+                                    <div style="flex: 1; min-width: 200px; text-align: right;">
+                                        <form action="/operator/orders/update-status" method="POST">
+                                            <input type="hidden" name="orderId" value="<%= order._id %>">
+                                            <input type="hidden" name="itemId" value="<%= item._id %>">
+                                            
+                                            <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 5px;">CURRENT STATUS</label>
+                                            <select name="status" onchange="this.form.submit()" style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; width: 100%; max-width: 150px; 
+                                                background-color: <%= item.status === 'completed' ? '#dcfce7' : (item.status === 'pending' ? '#ffedd5' : '#e0f2fe') %>;">
+                                                <option value="pending" <%= item.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                                                <option value="processing" <%= item.status === 'processing' ? 'selected' : '' %>>Processing</option>
+                                                <option value="completed" <%= item.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                                            </select>
+                                        </form>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                <% } %>
+            <% }) %>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

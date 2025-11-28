@@ -210,3 +210,259 @@ This platform solves a **documented gap in Nigerian e-commerce systems**, where:
 The design is simple, accessible, and built to match the local realities of Kano’s SME ecosystem.
 
 ---
+## 9. Operator System
+Operator System – Technical Implementation Blueprint
+Overview
+
+The operator subsystem allows an SME Owner to onboard assistants (called Operators) to help manage specific business units. Operators are intended for SMEs that realistically have multiple employees or branches — such as barbershops, cafés, restaurants, repair shops, or any business where workflow is divided among workers.
+
+The system introduces:
+
+A new role: operator
+
+A new Business structure: multiple business units per SME Owner
+
+Access restrictions so operators can only manage the business they belong to
+
+Workflows for:
+
+Assigning operators
+
+Managing operator queues (for service SMEs)
+
+Handling daily operational tasks
+
+This maintains authenticity with how SMEs operate in real life while keeping the system clean and manageable.
+
+🧱 1. Data Models Required
+A. User Model (Extended)
+
+Operators are still “Users”—they just have special attributes.
+
+{
+  _id: ObjectId,
+  name: String,
+  email: String,
+  password: String,
+  phone: String,
+  role: { type: String, enum: ['consumer', 'sme_owner', 'operator', 'admin'] },
+
+  // Operator-specific fields
+  operatorOf: {
+    type: ObjectId,
+    ref: 'Business',
+    default: null
+  }
+}
+
+Notes:
+
+Operators must belong to exactly one business.
+
+Operators cannot own businesses.
+
+SME Owners can create multiple operators, but each operator is tied to only one business.
+
+B. Business Model (Extended)
+{
+  _id: ObjectId,
+  owner: { type: ObjectId, ref: 'User' },
+  name: String,
+  category: String,   // Retail or Service
+  address: String,
+  description: String,
+  
+  operators: [
+    { type: ObjectId, ref: 'User' }
+  ]
+}
+
+Notes:
+
+operators[] stores the IDs of users assigned as operators.
+
+This is essential for permissions.
+
+🧭 2. Role Logic
+SME Owner can:
+
+✔ Create operators
+✔ Assign operators to a business
+✔ Remove operators
+✔ View operator activity
+✔ See order/task queues for all operators
+
+Operator can:
+
+✔ Login
+✔ Access only their assigned business dashboard
+✔ View tasks/orders assigned to their queue
+✔ Update task status (e.g., “In Progress”, “Completed”)
+
+Operator CANNOT:
+
+✘ Edit business information
+✘ Delete business
+✘ Add or remove other operators
+✘ Manage categories
+✘ Access owner-level statistics
+
+🚧 3. SME Owner → Create Operator Workflow
+Route:
+
+GET /sme/:businessId/operators/create
+POST /sme/:businessId/operators/create
+
+Flow:
+
+SME Owner logs in.
+
+Opens “Manage Operators” in their dashboard.
+
+Clicks “Add Operator”.
+
+Fills form:
+
+name
+
+phone
+
+email
+
+System creates a new User with:
+
+role = operator
+
+operatorOf = businessId
+
+The operator is added to business.operators[].
+
+🔐 4. Authentication & Authorization
+Middleware for operators
+function onlyOperator(req, res, next) {
+  if (req.isAuthenticated() && req.user.role === 'operator') {
+    return next();
+  }
+  return res.redirect('/unauthorized');
+}
+
+Middleware to ensure operator belongs to the business
+function operatorBelongsToBusiness(req, res, next) {
+  const businessId = req.params.businessId;
+
+  if (req.user.operatorOf == businessId) {
+    return next();
+  }
+
+  return res.status(403).send("Access denied");
+}
+
+Used for routes like:
+
+/operator/business/:businessId/dashboard
+
+/operator/business/:businessId/tasks
+
+🗂 5. Operator Dashboard Structure
+
+An operator dashboard includes:
+
+1. Assigned Business Overview
+
+Business name
+
+Business category
+
+Current date summary
+
+2. Operator-Specific Queue
+
+For service businesses:
+
+Pending service tasks
+
+In-progress tasks
+
+Completed tasks
+
+For retail businesses (optional):
+
+Orders assigned to that operator (if the SME Owner chooses to delegate retail order handling)
+
+3. Actions
+
+Update task status
+
+View task details
+
+Mark service as completed
+
+🔄 6. Order / Task Assignment Model
+For Retail SMEs:
+
+SME Owner → optionally assigns an operator to process orders
+
+For Service SMEs:
+
+Every service request becomes a Task:
+
+{
+  _id: ObjectId,
+  business: ObjectId,
+  operator: ObjectId,     // Assigned operator
+  consumer: ObjectId,
+  serviceName: String,
+  status: { type: String, enum: ['Pending', 'In Progress', 'Completed'] },
+  createdAt: Date,
+  updatedAt: Date
+}
+
+
+Operators see only the tasks with:
+
+operator: operator._id
+
+SME Owners see all tasks for the business.
+
+🧩 7. SME Owner → Assigning Operators to Service Tasks
+Workflow:
+
+Consumer books a service.
+
+The system checks:
+
+Are there operators under this business?
+
+If yes → SME Owner dashboard shows:
+
+“Assign task to operator” dropdown
+
+If no → Task is “Unassigned” (but SME Owner can claim it).
+
+🧰 8. Removing an Operator
+
+Removing an operator requires:
+
+SME Owner clicks "Remove Operator"
+
+System:
+
+sets user.role back to "consumer" OR
+
+deactivates the user
+
+removes user ID from business.operators[]
+
+reassigns any pending tasks to the SME Owner
+
+🔎 9. Permissions Summary Table
+Action	Consumer	SME Owner	Operator	Admin
+Register	✔	✔	✖ (auto-created)	✖
+Create business	✖	✔	✖	✖
+Add listings	✖	✔	✖	✖
+Manage orders	✖	✔	✔ (restricted)	✖
+Manage service tasks	✖	✔	✔ (only theirs)	✖
+Add operator	✖	✔	✖	✖
+Remove operator	✖	✔	✖	✖
+Modify categories	✖	✖	✖	✔
+Delete listings	✖	✔	✖	✔

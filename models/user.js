@@ -29,6 +29,11 @@ const UserSchema = new Schema({
         enum: ['consumer', 'sme_owner', 'operator', 'admin'],
         default: 'consumer'
     },
+    operatorOf: {
+        type: Schema.Types.ObjectId,
+        ref: 'Business',
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now

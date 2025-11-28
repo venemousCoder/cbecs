@@ -1,0 +1,48 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh; display: flex; justify-content: center;">
+    <div class="auth-card" style="width: 100%; max-width: 500px; margin: 0;">
+        <div class="section-header" style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+            <h3 class="section-title">Add Operator</h3>
+            <a href="/sme/business/<%= business._id %>/manage" style="color: var(--text-muted); font-size: 14px; text-decoration: none;"><i class="fas fa-arrow-left"></i> Cancel</a>
+        </div>
+
+        <div style="margin-bottom: 20px; background: #f0f9ff; padding: 15px; border-radius: var(--radius-sm); border: 1px solid #bae6fd; font-size: 13px; color: #0369a1;">
+            <strong>Business:</strong> <%= business.name %> (<%= business.category %>)<br>
+            This operator will be able to manage orders and bookings for this business only.
+        </div>
+
+        <!-- Flash Messages -->
+        <% if (locals.error && locals.error.length > 0) { %>
+            <div style="color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form action="/sme/business/<%= business._id %>/operators/add" method="POST">
+            <div class="form-group">
+                <label for="name">Operator Name</label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Full Name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Operator Email</label>
+                <input type="email" name="email" id="email" class="form-control" placeholder="email@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" name="phone" id="phone" class="form-control" placeholder="080..." required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Create Password</label>
+                <input type="password" name="password" id="password" class="form-control" placeholder="******" required>
+            </div>
+
+            <button type="submit" class="auth-btn">Create Operator</button>
+        </form>
+    </div>
+</div>
+
+<%- include('../../partials/footer') %>

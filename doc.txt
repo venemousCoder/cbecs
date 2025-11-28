@@ -265,3 +265,32 @@
   The system is now fully functional for the "Order" lifecycle: Consumer adds to
   cart -> Checkout -> Order Saved -> Consumer sees history -> SME sees order in
   dashboard -> SME updates status -> Consumer sees updated status.
+
+  ✦ I have implemented the Operator system creation workflow.
+
+  Summary of Changes:
+
+   1. Updated Models:
+       * User model: Added operatorOf field (ObjectId ref to Business).
+       * Business model: Added operators array (ObjectId ref to User).
+   2. Created `controllers/operator.controller.js`:
+       * getAddOperatorPage: Renders the form.
+       * createOperator: Creates a new user with role operator, links them to the
+         business, and updates the business's operators array. Enforces the rule:
+         Retail businesses can only have 1 operator.
+   3. Updated Routes:
+       * routes/sme.routes.js: Imported operator.controller and added routes for
+         /business/:id/operators/add (GET & POST).
+       * Removed temporary routes/operator.routes.js to keep architecture clean.
+   4. Created View:
+       * views/sme/operators/add.ejs: Form to register a new operator directly
+         under a specific business.
+   5. Updated UI:
+       * views/sme/manage-business.ejs: The "Operators" link now points to the "Add
+         Operator" page.
+
+  SME Owners can now create operators for their specific businesses. The next
+  logical step would be to create the Operator Dashboard so these new users can
+  actually log in and see/manage their assigned tasks.
+
+  
