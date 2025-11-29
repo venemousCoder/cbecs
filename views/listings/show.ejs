@@ -31,10 +31,10 @@
             </div>
 
             <div style="margin-bottom: 25px; padding: 15px; background: #f9fafb; border-radius: var(--radius-sm);">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                <a href="/shop/<%= listing.business._id %>" style="text-decoration: none; display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                     <img src="<%= listing.business.logo || '/public/assets/default-business.png' %>" alt="<%= listing.business.name %>" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
                     <span style="font-weight: 600; color: var(--secondary);"><%= listing.business.name %></span>
-                </div>
+                </a>
                 <p style="margin: 0; font-size: 13px; color: var(--text-muted);"><i class="fas fa-map-marker-alt"></i> <%= listing.business.address %></p>
             </div>
 

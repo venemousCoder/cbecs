@@ -1,4 +1,6 @@
-function getHomePage(req, res) {
+const Category = require('../models/category');
+
+async function getHomePage(req, res) {
     // Hero Slides reflecting the hybrid nature (Retail, Services, Food)
     const heroSlides = [
         { 
@@ -24,24 +26,13 @@ function getHomePage(req, res) {
         }
     ];
 
-    // Sidebar Categories - Mixing Retail, Services, and Food
-    const categories = [
-        // Retail
-        { name: "Supermarket", icon: "fa-shopping-basket", id: "supermarket", type: "retail" },
-        { name: "Phones & Tablets", icon: "fa-mobile-alt", id: "phones", type: "retail" },
-        { name: "Fashion", icon: "fa-tshirt", id: "fashion", type: "retail" },
-        { name: "Electronics", icon: "fa-tv", id: "electronics", type: "retail" },
-        // Services
-        { name: "Beauty & Salons", icon: "fa-cut", id: "beauty-services", type: "service" },
-        { name: "Repairs & Mechanics", icon: "fa-tools", id: "mechanics", type: "service" },
-        { name: "Laundry & Cleaning", icon: "fa-soap", id: "laundry", type: "service" },
-        // Food
-        { name: "Restaurants & Cafés", icon: "fa-utensils", id: "food", type: "food" },
-        // More Retail
-        { name: "Home & Office", icon: "fa-couch", id: "home", type: "retail" },
-        { name: "Computing", icon: "fa-laptop", id: "computing", type: "retail" },
-        { name: "Automobile Parts", icon: "fa-car-battery", id: "auto-parts", type: "retail" }
-    ];
+    // Fetch Categories from DB
+    let categories = [];
+    try {
+        categories = await Category.find();
+    } catch (err) {
+        console.error("Error fetching categories:", err);
+    }
 
     // Flash Sales (Primarily Retail Products)
     const flashSales = [

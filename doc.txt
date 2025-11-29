@@ -363,3 +363,59 @@
   The Admin Dashboard is now accessible at /admin/dashboard (requires a user with
   role: 'admin'). You can use this to moderate content, manage business access, and
   configure categories.
+
+  ✦ I have completed the task. The category links on the home page are now dynamic
+  and active, fetching data from the database. Additionally, both SME owners and
+  Operators must now select a category when adding a new listing.
+
+  Summary of Changes:
+
+   1. Models:
+       * `models/listing.js`: Added a required category field (referencing the
+         Category model).
+       * `models/category.js`: Added a required type field (enum: retail, service,
+         food) to support the platform's hybrid nature.
+
+   2. Controllers:
+       * `controllers/home.controller.js`: Removed hardcoded categories; now
+         fetches them dynamically from the database for the home page.
+       * `controllers/consumer.controller.js`: Updated getCategoryListings to look
+         up categories by slug and then find listings by the category ID.
+       * `controllers/listing.controller.js` &
+         `controllers/operator.controller.js`: Updated the "Add Listing" logic to
+         fetch available categories for the form and save the selected category ID
+         when a listing is created.
+
+   3. Views:
+       * `views/home.ejs`: Updated the Sidebar and Circle Grid to use dynamic
+         category data and link to /category/:slug.
+       * `views/categories/index.ejs`: Updated to use dynamic links
+         (/category/:slug) and descriptions.
+       * `views/sme/listings/add.ejs` & `views/operator/listings/add.ejs`: Added a
+         "Category" dropdown menu to the "Add Listing" forms.
+
+   4. Routes:
+       * `routes/home.routes.js`: standardized the route for single category views
+         to /category/:id (where :id is the slug).
+
+  Note: Since the home page and category pages now rely on database content, ensure
+  you have created some Category documents in your database (with slugs like
+  'retail', 'services', 'food' to match the Hero Slider links) for the site to
+  function correctly.
+
+  ✦ I've implemented the functionality for consumers to view a shop's details and its
+  listings.
+
+  Here is a summary of the changes:
+   1. Controller Logic: Added getShopDetails to controllers/consumer.controller.js.
+      This fetches the Business by ID and finds all Listing items associated with
+      that business.
+   2. Route: Added a new route GET /shop/:id in routes/home.routes.js that maps to
+      the new controller method.
+   3. View: Created views/shop/show.ejs. This page displays the shop's logo, name,
+      description, address, and a grid of all their active listings.
+   4. Integration: Updated views/listings/show.ejs so that clicking the business
+      name or logo on a product page now takes the user to that shop's profile.
+
+  You can now navigate to /shop/<business_id> to see the new shop page, or click on
+  the shop name from any listing details page.

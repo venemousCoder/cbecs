@@ -1,5 +1,6 @@
 const Listing = require('../models/listing');
 const Business = require('../models/business');
+const Category = require('../models/category');
 const fs = require('fs');
 const path = require('path');
 
@@ -26,6 +27,8 @@ exports.getListings = async (req, res) => {
 exports.getAddListingPage = async (req, res) => {
     try {
         const businesses = await Business.find({ owner: req.user._id });
+        const categories = await Category.find(); // Fetch all categories
+
         if (businesses.length === 0) {
             req.flash('error', 'You must create a business first!');
             return res.redirect('/sme/create-business');
@@ -33,6 +36,7 @@ exports.getAddListingPage = async (req, res) => {
         res.render('sme/listings/add', {
             title: 'Add New Listing',
             businesses,
+            categories, // Pass to view
             user: req.user
         });
     } catch (err) {
@@ -44,7 +48,7 @@ exports.getAddListingPage = async (req, res) => {
 // Process Add Listing
 exports.addListing = async (req, res) => {
     try {
-        const { businessId, name, description, price, stock, duration } = req.body;
+        const { businessId, name, description, price, stock, duration, category } = req.body;
         
         // Validation: Verify business belongs to user
         const business = await Business.findOne({ _id: businessId, owner: req.user._id }).populate('operators');
@@ -69,6 +73,7 @@ exports.addListing = async (req, res) => {
             name,
             description,
             price,
+            category, // Save category
             type,
             stock: (type === 'product' || type === 'retail') ? stock : 0,
             duration: type === 'service' ? duration : 0,
@@ -198,7 +203,7 @@ exports.deleteListing = async (req, res) => {
             return res.redirect('/sme/listings');
         }
 
-        await Listing.deleteOne({ _id: listing._id });
+        await Listing.deleteAndCleanup(listing._id);
         req.flash('success', 'Listing deleted');
         res.redirect('/sme/listings');
 

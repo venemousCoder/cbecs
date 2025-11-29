@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <!-- Shop Header Info -->
+    <div style="background: white; border-radius: var(--radius-md); padding: 30px; box-shadow: var(--shadow-sm); margin-bottom: 30px; display: flex; gap: 30px; align-items: flex-start;">
+        <div style="width: 120px; height: 120px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 4px solid #f9fafb;">
+            <img src="<%= business.logo || '/public/assets/default-business.png' %>" alt="<%= business.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1 style="color: var(--secondary); margin: 0 0 5px 0; font-size: 32px;"><%= business.name %></h1>
+                    <div style="margin-bottom: 15px;">
+                        <span class="type-badge <%= business.category %>" style="font-size: 12px;"><%= business.category.toUpperCase() %></span>
+                        <span style="margin-left: 10px; color: var(--text-muted); font-size: 14px;"><i class="fas fa-map-marker-alt"></i> <%= business.address %></span>
+                    </div>
+                </div>
+                <!-- Optional: Contact/Follow buttons could go here -->
+            </div>
+            
+            <p style="color: #555; max-width: 700px; line-height: 1.6; margin: 0;">
+                <%= business.description || "No description available." %>
+            </p>
+        </div>
+    </div>
+
+    <!-- Listings Section -->
+    <div class="section-header">
+        <h3 class="section-title" style="border-bottom: 2px solid var(--primary); padding-bottom: 10px; display: inline-block;">Current Listings</h3>
+    </div>
+
+    <% if (listings.length === 0) { %>
+        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
+                <i class="fas fa-box-open"></i>
+            </div>
+            <h3 style="color: var(--secondary);">No Active Listings</h3>
+            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto;">This shop hasn't posted any listings yet.</p>
+        </div>
+    <% } else { %>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+            <% listings.forEach(item => { %>
+                <a href="/listing/<%= item._id %>" class="product-card" style="text-decoration: none; color: inherit;">
+                    <div class="product-img" style="height: 180px; background: #f9fafb;">
+                        <img src="<%= item.image %>" alt="<%= item.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="product-info">
+                        <div class="type-badge <%= item.type %>"><%= item.type.toUpperCase() %></div>
+                        <h4 class="product-title"><%= item.name %></h4>
+                        <div class="product-meta">
+                            <span class="price">R<%= item.price.toFixed(2) %></span>
+                            <span class="rating"><i class="fas fa-star"></i> 4.5</span>
+                        </div>
+                    </div>
+                </a>
+            <% }) %>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

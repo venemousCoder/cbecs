@@ -1,44 +1,39 @@
 const Listing = require('../models/listing');
 const Business = require('../models/business');
+const Category = require('../models/category');
 
-// Get all categories (Static for now, as they are structural)
-exports.getAllCategories = (req, res) => {
-    const categories = [
-        { id: 'retail', name: 'Retail Products', icon: 'fa-shopping-bag', desc: 'Electronics, Fashion, Home Goods' },
-        { id: 'service', name: 'Professional Services', icon: 'fa-tools', desc: 'Repairs, Beauty, Cleaning' },
-        { id: 'food', name: 'Food & Drink', icon: 'fa-utensils', desc: 'Restaurants, Cafés, Home Cooks' }
-    ];
-    res.render('categories/index', {
-        title: 'Browse Categories',
-        categories,
-        user: req.user
-    });
+// Get all categories
+exports.getAllCategories = async (req, res) => {
+    try {
+        const categories = await Category.find();
+        res.render('categories/index', {
+            title: 'Browse Categories',
+            categories,
+            user: req.user
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
+    }
 };
 
 // Get listings by category
 exports.getCategoryListings = async (req, res) => {
-    const categoryId = req.params.id;
-    let dbType;
-
-    // Map URL category to DB type/business category
-    if (categoryId === 'retail') dbType = 'product';
-    else if (categoryId === 'service') dbType = 'service';
-    else if (categoryId === 'food') dbType = 'food';
-    else {
-        // Handle unknown category or subcategories if implemented later
-        dbType = categoryId; 
-    }
+    const slug = req.params.id;
 
     try {
-        // Find listings where the TYPE matches
-        // Note: Retail businesses sell 'product' type listings
-        const query = dbType === 'product' ? { type: { $in: ['product', 'retail'] } } : { type: dbType };
+        const category = await Category.findOne({ slug: slug });
         
-        const listings = await Listing.find(query).populate('business');
+        if (!category) {
+            req.flash('error', 'Category not found');
+            return res.redirect('/categories');
+        }
+        
+        const listings = await Listing.find({ category: category._id }).populate('business');
 
         res.render('categories/show', {
-            title: `${categoryId.charAt(0).toUpperCase() + categoryId.slice(1)} Listings`,
-            categoryName: categoryId,
+            title: `${category.name} Listings`,
+            categoryName: category.name,
             listings,
             user: req.user
         });
@@ -95,6 +90,30 @@ exports.searchListings = async (req, res) => {
         res.render('search', {
             title: `Search Results for "${query}"`,
             query,
+            listings,
+            user: req.user
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
+    }
+};
+
+// Get Shop Details
+exports.getShopDetails = async (req, res) => {
+    try {
+        const business = await Business.findById(req.params.id);
+        
+        if (!business) {
+            req.flash('error', 'Shop not found');
+            return res.redirect('/');
+        }
+        
+        const listings = await Listing.find({ business: business._id });
+
+        res.render('shop/show', {
+            title: business.name,
+            business,
             listings,
             user: req.user
         });

@@ -2,6 +2,7 @@ const Listing = require('../models/listing');
 const Business = require('../models/business');
 const Order = require('../models/order');
 const User = require('../models/user');
+const Category = require('../models/category');
 
 // ... [Previous functions: getAddOperatorPage, createOperator, getOperatorDashboard, operatorUpdateStatus, getOperatorsList, removeOperator] ...
 
@@ -173,6 +174,8 @@ exports.removeOperator = async (req, res) => {
 exports.getOperatorAddListingPage = async (req, res) => {
     try {
         const business = await Business.findById(req.user.operatorOf);
+        const categories = await Category.find();
+        
         if (!business) {
              req.flash('error', 'Business not found.');
              return res.redirect('/operator/dashboard');
@@ -180,6 +183,7 @@ exports.getOperatorAddListingPage = async (req, res) => {
         res.render('operator/listings/add', {
             title: 'Add Listing',
             business,
+            categories,
             user: req.user
         });
     } catch (err) {
@@ -190,7 +194,7 @@ exports.getOperatorAddListingPage = async (req, res) => {
 
 exports.operatorAddListing = async (req, res) => {
     try {
-        const { name, description, price, stock, duration } = req.body;
+        const { name, description, price, stock, duration, category } = req.body;
         const business = await Business.findById(req.user.operatorOf);
 
         let type = 'product';
@@ -202,6 +206,7 @@ exports.operatorAddListing = async (req, res) => {
             name,
             description,
             price,
+            category,
             type,
             stock: (type === 'product' || type === 'retail') ? stock : 0,
             duration: type === 'service' ? duration : 0,
@@ -295,7 +300,7 @@ exports.operatorDeleteListing = async (req, res) => {
             return res.redirect('/operator/dashboard');
         }
 
-        await Listing.deleteOne({ _id: listing._id });
+        await Listing.deleteAndCleanup(listing._id);
         req.flash('success', 'Listing deleted');
         res.redirect('/operator/dashboard');
 

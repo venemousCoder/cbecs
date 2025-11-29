@@ -76,7 +76,7 @@ exports.getListings = async (req, res) => {
 
 exports.deleteListing = async (req, res) => {
     try {
-        await Listing.findByIdAndDelete(req.params.id);
+        await Listing.deleteAndCleanup(req.params.id);
         req.flash('success', 'Listing deleted by admin');
         res.redirect('/admin/listings');
     } catch (err) {
@@ -118,10 +118,10 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     try {
-        const { name, icon, description } = req.body;
+        const { name, type, icon, description } = req.body;
         const slug = name.toLowerCase().replace(/ /g, '-');
         
-        const newCategory = new Category({ name, slug, icon, description });
+        const newCategory = new Category({ name, type, slug, icon, description });
         await newCategory.save();
         
         req.flash('success', 'Category added');

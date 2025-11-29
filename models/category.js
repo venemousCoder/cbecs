@@ -8,6 +8,11 @@ const CategorySchema = new Schema({
         unique: true,
         trim: true
     },
+    type: {
+        type: String,
+        enum: ['retail', 'service', 'food'], // Matches the UI color coding logic
+        required: true
+    },
     slug: {
         type: String,
         required: true,

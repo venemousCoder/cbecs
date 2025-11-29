@@ -9,7 +9,8 @@ router.get('/', homeController.getHomePage);
 
 // Consumer / Public Routes
 router.get('/categories', consumerController.getAllCategories);
-router.get('/categories/:id', consumerController.getCategoryListings);
+router.get('/category/:id', consumerController.getCategoryListings);
+router.get('/shop/:id', consumerController.getShopDetails);
 router.get('/listing/:id', consumerController.getListingDetails);
 router.get('/search', consumerController.searchListings);
 
