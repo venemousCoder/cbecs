@@ -1,0 +1,65 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh; display: flex; justify-content: center;">
+    <div class="auth-card" style="width: 100%; max-width: 600px; margin: 0;">
+        <div class="section-header" style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+            <h3 class="section-title">Add Listing</h3>
+            <a href="/operator/dashboard" style="color: var(--text-muted); font-size: 14px; text-decoration: none;"><i class="fas fa-arrow-left"></i> Cancel</a>
+        </div>
+
+        <form action="/operator/listings/add" method="POST" enctype="multipart/form-data">
+            
+            <!-- Read-only Business Info -->
+            <div class="form-group">
+                <label>Business</label>
+                <input type="text" class="form-control" value="<%= business.name %> (<%= business.category %>)" disabled style="background-color: #f9fafb; cursor: not-allowed;">
+            </div>
+
+            <div class="form-group">
+                <label for="name">Listing Name</label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="e.g. Product Name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea name="description" id="description" class="form-control" rows="4" required></textarea>
+            </div>
+
+            <div class="row" style="display: flex; gap: 15px;">
+                <div class="col" style="flex: 1;">
+                    <div class="form-group">
+                        <label for="price">Price (R)</label>
+                        <input type="number" name="price" id="price" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                </div>
+                
+                <% if (business.category === 'service') { %>
+                    <!-- Duration Field (For Services) -->
+                    <div class="col" style="flex: 1;">
+                        <div class="form-group">
+                            <label for="duration">Duration (Minutes)</label>
+                            <input type="number" name="duration" id="duration" class="form-control" min="1" step="1" value="30">
+                        </div>
+                    </div>
+                <% } else { %>
+                    <!-- Stock Field (For Products) -->
+                    <div class="col" style="flex: 1;">
+                        <div class="form-group">
+                            <label for="stock">Stock Quantity</label>
+                            <input type="number" name="stock" id="stock" class="form-control" min="0" value="1">
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="form-group">
+                <label for="image">Listing Image</label>
+                <input type="file" name="image" id="image" class="form-control" accept="image/*">
+            </div>
+
+            <button type="submit" class="auth-btn">Create Listing</button>
+        </form>
+    </div>
+</div>
+
+<%- include('../../partials/footer') %>

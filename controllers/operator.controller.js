@@ -1,8 +1,11 @@
+const Listing = require('../models/listing');
 const Business = require('../models/business');
-const User = require('../models/user');
 const Order = require('../models/order');
+const User = require('../models/user');
 
-// Render Add Operator Page
+// ... [Previous functions: getAddOperatorPage, createOperator, getOperatorDashboard, operatorUpdateStatus, getOperatorsList, removeOperator] ...
+
+// RENDER Add Operator Page
 exports.getAddOperatorPage = async (req, res) => {
     try {
         const business = await Business.findOne({ _id: req.params.id, owner: req.user._id });
@@ -33,32 +36,28 @@ exports.createOperator = async (req, res) => {
             return res.redirect('/sme/dashboard');
         }
 
-        // Retail Constraint: Only 1 operator allowed
         if (business.category === 'retail' && business.operators.length >= 1) {
             req.flash('error', 'Retail businesses can only have 1 operator.');
             return res.redirect(`/sme/business/${businessId}/manage`);
         }
 
-        // Check if email exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             req.flash('error', 'User with this email already exists.');
             return res.redirect(`/sme/business/${businessId}/operators/add`);
         }
 
-        // Create Operator User
         const newOperator = new User({
             name,
             email,
             phone,
-            password, // Hashed by pre-save hook
+            password, 
             role: 'operator',
             operatorOf: business._id
         });
 
         await newOperator.save();
 
-        // Add to Business
         business.operators.push(newOperator._id);
         await business.save();
 
@@ -75,29 +74,26 @@ exports.createOperator = async (req, res) => {
 // Operator Dashboard
 exports.getOperatorDashboard = async (req, res) => {
     try {
-        // 1. Get the business this operator belongs to
         const business = await Business.findById(req.user.operatorOf);
-        
         if (!business) {
             req.flash('error', 'Business not found or you are not assigned properly.');
             return res.redirect('/login');
         }
 
-        // 2. Get assigned tasks/orders
-        // Logic: Operators see orders containing items from their business.
-        // For now, showing ALL orders for that business.
-        const orders = await Order.find({
-            'items.business': business._id
-        })
-        .populate('user', 'name phone')
-        .populate('items.listing')
-        .sort({ createdAt: -1 });
+        const orders = await Order.find({ 'items.business': business._id })
+            .populate('user', 'name phone')
+            .populate('items.listing')
+            .sort({ createdAt: -1 });
+        
+        // Fetch listings for this operator's business to display in dashboard
+        const listings = await Listing.find({ business: business._id });
 
         res.render('operator/dashboard', {
             title: `Operator Dashboard - ${business.name}`,
             user: req.user,
             business,
-            orders
+            orders,
+            listings // Passed listings to view
         });
 
     } catch (err) {
@@ -107,12 +103,10 @@ exports.getOperatorDashboard = async (req, res) => {
     }
 };
 
-// Operator Update Item Status
+// Operator Update Status
 exports.operatorUpdateStatus = async (req, res) => {
     try {
         const { orderId, itemId, status } = req.body;
-
-        // Security check: Ensure operator belongs to the business of the item
         const order = await Order.findById(orderId);
         const item = order.items.id(itemId);
 
@@ -159,14 +153,10 @@ exports.removeOperator = async (req, res) => {
     try {
         const { operatorId } = req.body;
         const businessId = req.params.id;
-
         const business = await Business.findOne({ _id: businessId, owner: req.user._id });
         
-        // Remove from business array
         business.operators = business.operators.filter(op => op.toString() !== operatorId);
         await business.save();
-
-        // Delete User (or set to consumer, but deletion is cleaner for this context)
         await User.findByIdAndDelete(operatorId);
 
         req.flash('success', 'Operator removed successfully');
@@ -175,5 +165,143 @@ exports.removeOperator = async (req, res) => {
         console.error(err);
         req.flash('error', 'Error removing operator');
         res.redirect(`/sme/business/${req.params.id}/operators`);
+    }
+};
+
+// --- Operator Listing CRUD ---
+
+exports.getOperatorAddListingPage = async (req, res) => {
+    try {
+        const business = await Business.findById(req.user.operatorOf);
+        if (!business) {
+             req.flash('error', 'Business not found.');
+             return res.redirect('/operator/dashboard');
+        }
+        res.render('operator/listings/add', {
+            title: 'Add Listing',
+            business,
+            user: req.user
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/operator/dashboard');
+    }
+};
+
+exports.operatorAddListing = async (req, res) => {
+    try {
+        const { name, description, price, stock, duration } = req.body;
+        const business = await Business.findById(req.user.operatorOf);
+
+        let type = 'product';
+        if (business.category === 'service') type = 'service';
+        else if (business.category === 'food') type = 'food';
+
+        const newListing = new Listing({
+            business: business._id,
+            name,
+            description,
+            price,
+            type,
+            stock: (type === 'product' || type === 'retail') ? stock : 0,
+            duration: type === 'service' ? duration : 0,
+            image: req.file ? `/public/uploads/listings/${req.file.filename}` : undefined
+        });
+
+        await newListing.save();
+        req.flash('success', 'Listing added successfully');
+        res.redirect('/operator/dashboard');
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Error adding listing');
+        res.redirect('/operator/listings/add');
+    }
+};
+
+exports.getOperatorEditListingPage = async (req, res) => {
+    try {
+        const listing = await Listing.findById(req.params.id);
+        
+        if (!listing) {
+            req.flash('error', 'Listing not found');
+            return res.redirect('/operator/dashboard');
+        }
+
+        // Ensure listing belongs to operator's business
+        if (listing.business.toString() !== req.user.operatorOf.toString()) {
+            req.flash('error', 'Unauthorized');
+            return res.redirect('/operator/dashboard');
+        }
+
+        res.render('operator/listings/edit', {
+            title: 'Edit Listing',
+            listing,
+            user: req.user
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/operator/dashboard');
+    }
+};
+
+exports.operatorEditListing = async (req, res) => {
+    try {
+        const listing = await Listing.findById(req.params.id);
+        if (!listing) {
+            req.flash('error', 'Listing not found');
+            return res.redirect('/operator/dashboard');
+        }
+
+        if (listing.business.toString() !== req.user.operatorOf.toString()) {
+            req.flash('error', 'Unauthorized');
+            return res.redirect('/operator/dashboard');
+        }
+
+        const { name, description, price, stock, duration } = req.body;
+
+        listing.name = name;
+        listing.description = description;
+        listing.price = price;
+        
+        if (listing.type === 'product') listing.stock = stock;
+        if (listing.type === 'service') listing.duration = duration;
+
+        if (req.file) {
+            listing.image = `/public/uploads/listings/${req.file.filename}`;
+        }
+
+        await listing.save();
+        req.flash('success', 'Listing updated successfully');
+        res.redirect('/operator/dashboard');
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Error updating listing');
+        res.redirect(`/operator/listings/${req.params.id}/edit`);
+    }
+};
+
+exports.operatorDeleteListing = async (req, res) => {
+    try {
+        const listing = await Listing.findById(req.params.id);
+        if (!listing) {
+            req.flash('error', 'Listing not found');
+            return res.redirect('/operator/dashboard');
+        }
+
+        if (listing.business.toString() !== req.user.operatorOf.toString()) {
+            req.flash('error', 'Unauthorized');
+            return res.redirect('/operator/dashboard');
+        }
+
+        await Listing.deleteOne({ _id: listing._id });
+        req.flash('success', 'Listing deleted');
+        res.redirect('/operator/dashboard');
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Error deleting listing');
+        res.redirect('/operator/dashboard');
     }
 };

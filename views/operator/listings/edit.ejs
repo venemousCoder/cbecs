@@ -1,0 +1,62 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh; display: flex; justify-content: center;">
+    <div class="auth-card" style="width: 100%; max-width: 600px; margin: 0;">
+        <div class="section-header" style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+            <h3 class="section-title">Edit Listing</h3>
+            <a href="/operator/dashboard" style="color: var(--text-muted); font-size: 14px; text-decoration: none;"><i class="fas fa-arrow-left"></i> Cancel</a>
+        </div>
+
+        <form action="/operator/listings/<%= listing._id %>/edit" method="POST" enctype="multipart/form-data">
+            
+            <div class="form-group">
+                <label for="name">Listing Name</label>
+                <input type="text" name="name" id="name" class="form-control" value="<%= listing.name %>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea name="description" id="description" class="form-control" rows="4" required><%= listing.description %></textarea>
+            </div>
+
+            <div class="row" style="display: flex; gap: 15px;">
+                <div class="col" style="flex: 1;">
+                    <div class="form-group">
+                        <label for="price">Price (R)</label>
+                        <input type="number" name="price" id="price" class="form-control" step="0.01" min="0" value="<%= listing.price %>" required>
+                    </div>
+                </div>
+                
+                <% if (listing.type === 'service') { %>
+                    <!-- Duration Field (For Services) -->
+                    <div class="col" style="flex: 1;">
+                        <div class="form-group">
+                            <label for="duration">Duration (Minutes)</label>
+                            <input type="number" name="duration" id="duration" class="form-control" min="1" step="1" value="<%= listing.duration %>" required>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <!-- Stock Field (For Products) -->
+                    <div class="col" style="flex: 1;">
+                        <div class="form-group">
+                            <label for="stock">Stock Quantity</label>
+                            <input type="number" name="stock" id="stock" class="form-control" min="0" value="<%= listing.stock %>" required>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="form-group">
+                <label for="image">Update Image (Optional)</label>
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                    <img src="<%= listing.image %>" alt="Current" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;">
+                    <input type="file" name="image" id="image" class="form-control" accept="image/*" style="flex: 1;">
+                </div>
+            </div>
+
+            <button type="submit" class="auth-btn">Update Listing</button>
+        </form>
+    </div>
+</div>
+
+<%- include('../../partials/footer') %>

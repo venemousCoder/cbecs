@@ -47,10 +47,16 @@ exports.addListing = async (req, res) => {
         const { businessId, name, description, price, stock, duration } = req.body;
         
         // Validation: Verify business belongs to user
-        const business = await Business.findOne({ _id: businessId, owner: req.user._id });
+        const business = await Business.findOne({ _id: businessId, owner: req.user._id }).populate('operators');
         if (!business) {
             req.flash('error', 'Invalid business selected or unauthorized');
             return res.redirect('/sme/listings/add');
+        }
+
+        // CHECK: RETAIL OPERATOR RESTRICTION
+        if (business.category === 'retail' && business.operators && business.operators.length > 0) {
+            req.flash('error', 'Access Denied: This retail business has an operator. Only the operator can add listings.');
+            return res.redirect('/sme/listings');
         }
 
         // Auto-assign type based on business category
@@ -83,7 +89,10 @@ exports.addListing = async (req, res) => {
 // Render Edit Page
 exports.getEditListingPage = async (req, res) => {
     try {
-        const listing = await Listing.findById(req.params.id).populate('business');
+        const listing = await Listing.findById(req.params.id).populate({
+            path: 'business',
+            populate: { path: 'operators' }
+        });
         
         if (!listing) {
             req.flash('error', 'Listing not found');
@@ -93,6 +102,12 @@ exports.getEditListingPage = async (req, res) => {
         // Verify Ownership
         if (listing.business.owner.toString() !== req.user._id.toString()) {
             req.flash('error', 'Unauthorized');
+            return res.redirect('/sme/listings');
+        }
+
+        // CHECK: RETAIL OPERATOR RESTRICTION
+        if (listing.business.category === 'retail' && listing.business.operators && listing.business.operators.length > 0) {
+            req.flash('error', 'Access Denied: This retail business has an operator. Only the operator can edit listings.');
             return res.redirect('/sme/listings');
         }
 
@@ -110,7 +125,10 @@ exports.getEditListingPage = async (req, res) => {
 // Process Edit Listing
 exports.editListing = async (req, res) => {
     try {
-        const listing = await Listing.findById(req.params.id).populate('business');
+        const listing = await Listing.findById(req.params.id).populate({
+            path: 'business',
+            populate: { path: 'operators' }
+        });
 
         if (!listing) {
             req.flash('error', 'Listing not found');
@@ -119,6 +137,12 @@ exports.editListing = async (req, res) => {
 
         if (listing.business.owner.toString() !== req.user._id.toString()) {
             req.flash('error', 'Unauthorized');
+            return res.redirect('/sme/listings');
+        }
+
+        // CHECK: RETAIL OPERATOR RESTRICTION
+        if (listing.business.category === 'retail' && listing.business.operators && listing.business.operators.length > 0) {
+            req.flash('error', 'Access Denied: This retail business has an operator. Only the operator can edit listings.');
             return res.redirect('/sme/listings');
         }
 
@@ -153,7 +177,10 @@ exports.editListing = async (req, res) => {
 // Process Delete Listing
 exports.deleteListing = async (req, res) => {
     try {
-        const listing = await Listing.findById(req.params.id).populate('business');
+        const listing = await Listing.findById(req.params.id).populate({
+            path: 'business',
+            populate: { path: 'operators' }
+        });
 
         if (!listing) {
             req.flash('error', 'Listing not found');
@@ -162,6 +189,12 @@ exports.deleteListing = async (req, res) => {
 
         if (listing.business.owner.toString() !== req.user._id.toString()) {
             req.flash('error', 'Unauthorized');
+            return res.redirect('/sme/listings');
+        }
+
+        // CHECK: RETAIL OPERATOR RESTRICTION
+        if (listing.business.category === 'retail' && listing.business.operators && listing.business.operators.length > 0) {
+            req.flash('error', 'Access Denied: This retail business has an operator. Only the operator can delete listings.');
             return res.redirect('/sme/listings');
         }
 
