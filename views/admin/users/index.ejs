@@ -1,0 +1,39 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <div class="section-header">
+        <h3 class="section-title">System Users</h3>
+        <a href="/admin/dashboard" class="slide-btn" style="background: transparent; color: var(--secondary); border: 1px solid #eee;">Back</a>
+    </div>
+
+    <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+            <thead>
+                <tr style="background: #f9fafb; text-align: left;">
+                    <th style="padding: 15px; font-size: 12px; color: var(--text-muted);">NAME</th>
+                    <th style="padding: 15px; font-size: 12px; color: var(--text-muted);">EMAIL</th>
+                    <th style="padding: 15px; font-size: 12px; color: var(--text-muted);">ROLE</th>
+                    <th style="padding: 15px; font-size: 12px; color: var(--text-muted);">JOINED</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(u => { %>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 15px;">
+                            <strong style="color: var(--secondary);"><%= u.name %></strong>
+                        </td>
+                        <td style="padding: 15px;"><%= u.email %></td>
+                        <td style="padding: 15px;">
+                            <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #f3f4f6; color: #374151; text-transform: uppercase;"><%= u.role %></span>
+                        </td>
+                        <td style="padding: 15px; color: var(--text-muted); font-size: 13px;">
+                            <%= new Date(u.createdAt).toLocaleDateString() %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('../../partials/footer') %>

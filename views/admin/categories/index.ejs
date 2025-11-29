@@ -1,0 +1,80 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <div class="section-header">
+        <h3 class="section-title">Manage Categories</h3>
+        <a href="/admin/dashboard" class="slide-btn" style="background: transparent; color: var(--secondary); border: 1px solid #eee;">Back</a>
+    </div>
+
+    <!-- Flash Messages -->
+    <% if (locals.success && locals.success.length > 0) { %>
+        <div style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <div class="row" style="display: flex; gap: 30px; flex-wrap: wrap;">
+        
+        <!-- Add Category Form -->
+        <div class="col" style="flex: 1; min-width: 300px;">
+            <div style="background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+                <h4 style="margin-top: 0; color: var(--secondary);">Add New Category</h4>
+                <form action="/admin/categories" method="POST">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" name="name" id="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="icon">Icon Class (FontAwesome)</label>
+                        <input type="text" name="icon" id="icon" class="form-control" placeholder="fa-shopping-bag" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea name="description" id="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="auth-btn">Create Category</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Category List -->
+        <div class="col" style="flex: 2; min-width: 300px;">
+            <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f9fafb; text-align: left;">
+                            <th style="padding: 15px; font-size: 12px; color: var(--text-muted);">ICON</th>
+                            <th style="padding: 15px; font-size: 12px; color: var(--text-muted);">NAME</th>
+                            <th style="padding: 15px; font-size: 12px; color: var(--text-muted);">SLUG</th>
+                            <th style="padding: 15px; font-size: 12px; color: var(--text-muted);">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% categories.forEach(cat => { %>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 15px; text-align: center; width: 50px;">
+                                    <i class="fas <%= cat.icon %>" style="color: var(--primary);"></i>
+                                </td>
+                                <td style="padding: 15px;">
+                                    <strong><%= cat.name %></strong>
+                                </td>
+                                <td style="padding: 15px; color: var(--text-muted); font-size: 13px;">
+                                    <%= cat.slug %>
+                                </td>
+                                <td style="padding: 15px;">
+                                    <form action="/admin/categories/<%= cat._id %>/delete" method="POST" onsubmit="return confirm('Delete this category?');">
+                                        <button type="submit" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 13px;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../../partials/footer') %>

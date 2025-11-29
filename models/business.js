@@ -34,6 +34,11 @@ const BusinessSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'User'
     }],
+    status: {
+        type: String,
+        enum: ['pending', 'active', 'suspended'],
+        default: 'active'
+    },
     createdAt: {
         type: Date,
         default: Date.now

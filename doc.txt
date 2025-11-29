@@ -331,3 +331,35 @@
 
   The system now supports the complete lifecycle: SME creates operator -> Operator
   logs in -> Operator manages orders -> SME can remove operator
+
+  ✦ I have implemented the Admin Dashboard and its core management modules.
+
+  Summary of Changes:
+
+   1. Created `models/category.js`: A schema for dynamic category management (Name,
+      Slug, Icon, Description).
+   2. Updated `models/business.js`: Added a status field (default: 'active') to
+      allow admins to suspend/activate businesses.
+   3. Created `controllers/admin.controller.js`:
+       * getDashboard: Displays key statistics (User/Business/Listing counts) and
+         recent registrations.
+       * getSMEs & updateSMEStatus: Lists all SMEs and allows toggling their status
+         between 'Active' and 'Suspended'.
+       * getListings & deleteListing: Lists all platform listings and allows admin
+         deletion (moderation).
+       * getUsers: Lists all registered users and their roles.
+       * getCategories & createCategory/deleteCategory: CRUD for managing system
+         categories.
+   4. Created `routes/admin.routes.js`: Defined the admin endpoints, protected by
+      ensureRole('admin').
+   5. Updated `routes/index.routes.js`: Mounted the admin router at /admin.
+   6. Created Views:
+       * views/admin/dashboard.ejs: Main overview.
+       * views/admin/smes/index.ejs: Table view for SME management.
+       * views/admin/listings/index.ejs: Grid view for listing moderation.
+       * views/admin/users/index.ejs: List of all users.
+       * views/admin/categories/index.ejs: Interface to add and remove categories.
+
+  The Admin Dashboard is now accessible at /admin/dashboard (requires a user with
+  role: 'admin'). You can use this to moderate content, manage business access, and
+  configure categories.
