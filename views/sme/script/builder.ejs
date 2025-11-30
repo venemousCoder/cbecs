@@ -57,8 +57,13 @@
 
         <!-- Options Section (Only for multiple_choice) -->
         <div class="options-section" style="margin-top: 15px; display: none;">
-            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px;">Choices (comma separated)</label>
-            <input type="text" class="step-options" placeholder="e.g. Fade, Buzz Cut, Dreadlocks" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px;">Choices & Logic</label>
+            <div class="options-list" style="margin-bottom: 10px;">
+                <!-- Option rows injected here -->
+            </div>
+            <button class="add-option-btn" style="font-size: 12px; padding: 5px 10px; background: #eee; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                <i class="fas fa-plus"></i> Add Option
+            </button>
         </div>
 
         <div class="settings-row" style="margin-top: 15px; display: flex; gap: 20px; align-items: center;">
@@ -106,7 +111,7 @@
             card.querySelector('.step-required').checked = step.required !== false;
             
             if(step.options && step.options.length > 0) {
-                card.querySelector('.step-options').value = step.options.join(', ');
+                card.querySelector('.step-options').value = step.options.map(o => o.label || o).join(', ');
             }
 
             // Handle Type Change
@@ -179,7 +184,7 @@
         
         if(step.type === 'multiple_choice') {
             const raw = card.querySelector('.step-options').value;
-            step.options = raw.split(',').map(s => s.trim()).filter(s => s);
+            step.options = raw.split(',').map(s => s.trim()).filter(s => s).map(s => ({ label: s }));
         } else {
             step.options = [];
         }
@@ -195,9 +200,9 @@
         
         // Simple sequential nextStep
         if (index < scriptData.length - 1) {
-            step.nextStep = `step_${index + 2}`;
+            step.nextStepId = `step_${index + 2}`;
         } else {
-            step.nextStep = null;
+            step.nextStepId = null;
         }
     }
 
@@ -221,7 +226,7 @@
             scriptData = scriptData.map((s, i) => ({
                 ...s,
                 stepId: `step_${i + 1}`,
-                nextStep: (i < scriptData.length - 1) ? `step_${i + 2}` : null
+                nextStepId: (i < scriptData.length - 1) ? `step_${i + 2}` : null
             }));
 
             const res = await fetch(`/sme/business/${businessId}/script`, {

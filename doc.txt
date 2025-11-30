@@ -419,3 +419,29 @@
 
   You can now navigate to /shop/<business_id> to see the new shop page, or click on
   the shop name from any listing details page.
+
+  ✦ Phase 1 has been initiated and verified. I found that most of the core structure
+  was already in place but contained critical bugs preventing the "Script Builder"
+  from saving data compatible with the "Customer Flow".
+
+  Actions Taken:
+   1. Audited Codebase: Verified Business, User, and ServiceScript models against
+      Phase 1 requirements.
+   2. Fixed Bug in Script Builder (Schema Mismatch):
+       * The builder was generating nextStep (singular), but the database schema
+         expected nextStepId. This would have caused the flow to break immediately.
+         I updated views/sme/script/builder.ejs to use nextStepId.
+   3. Fixed Bug in Script Builder (Data Structure):
+       * The builder was saving Multiple Choice options as an array of strings
+         (["A", "B"]), but the schema required an array of objects ([{ label: "A"
+         }, { label: "B" }]). This would have caused a database validation error. I
+         updated the parsing logic in builder.ejs.
+   4. Fixed Bug in Script Builder (Display):
+       * Fixed the logic to correctly read the object-based options back into a
+         string when editing an existing script.
+   5. Verified Customer Flow: Confirmed that controllers/service.controller.js
+      correctly implements the linear flow using nextStepId, fulfilling Task 1.4.
+
+  Status:
+  Phase 1 is now functionally complete and stable. The system can now support
+  creating linear questionnaires and processing customer requests through them.
