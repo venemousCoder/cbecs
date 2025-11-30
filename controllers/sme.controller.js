@@ -1,5 +1,6 @@
 const Business = require('../models/business');
 const Order = require('../models/order');
+const ServiceScript = require('../models/serviceScript');
 
 // Render the Create Business Page
 exports.getCreateBusinessPage = (req, res) => {
@@ -216,5 +217,66 @@ exports.updateOrderItemStatus = async (req, res) => {
         console.error(err);
         req.flash('error', 'Error updating status');
         res.redirect('/sme/orders');
+    }
+};
+
+// --- Service Script Management ---
+
+exports.getScriptBuilder = async (req, res) => {
+    try {
+        const business = await Business.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!business) {
+            req.flash('error', 'Business not found');
+            return res.redirect('/sme/dashboard');
+        }
+
+        let script = await ServiceScript.findOne({ business: business._id });
+        
+        // If no script exists, pass a default structure
+        if (!script) {
+            script = { steps: [] };
+        }
+
+        res.render('sme/script/builder', {
+            title: `Service Flow - ${business.name}`,
+            business,
+            script,
+            user: req.user
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/sme/dashboard');
+    }
+};
+
+exports.saveScript = async (req, res) => {
+    try {
+        const business = await Business.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!business) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        const { steps } = req.body; // Expecting JSON payload via fetch/axios
+
+        let script = await ServiceScript.findOne({ business: business._id });
+        
+        if (script) {
+            script.steps = steps;
+            script.updatedAt = Date.now();
+            script.version = (script.version || 1) + 1;
+        } else {
+            script = new ServiceScript({
+                business: business._id,
+                steps,
+                version: 1
+            });
+        }
+
+        await script.save();
+        res.json({ success: true, message: 'Script saved successfully' });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
     }
 };

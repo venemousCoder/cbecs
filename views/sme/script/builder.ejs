@@ -1,0 +1,260 @@
+<%- include('../../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 60vh;">
+    <div class="row">
+        <div class="col-md-12">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <a href="/sme/dashboard" style="color: var(--text-muted); font-size: 14px; text-decoration: none;"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                    <h2 style="margin-top: 10px; color: var(--secondary);">Service Flow Builder: <%= business.name %></h2>
+                    <p style="color: var(--text-muted);">Design the conversation flow your customers will see when booking a service.</p>
+                </div>
+                <button id="saveBtn" class="auth-btn" style="margin: 0;">
+                    <i class="fas fa-save"></i> Save Script
+                </button>
+            </div>
+
+            <div style="background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: 30px;">
+                <div id="steps-container">
+                    <!-- Steps will be rendered here by JS -->
+                </div>
+
+                <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px dashed #eee;">
+                    <button id="addStepBtn" style="background: white; border: 2px dashed var(--primary); color: var(--primary); padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-plus"></i> Add New Step
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template for a single step card -->
+<template id="step-template">
+    <div class="step-card" style="background: #f9fafb; border: 1px solid #eee; border-radius: var(--radius-sm); padding: 20px; margin-bottom: 15px; position: relative;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+            <span class="step-badge" style="background: var(--secondary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">STEP <span class="step-index">1</span></span>
+            <button class="delete-step-btn" style="background: none; border: none; color: var(--danger); cursor: pointer;"><i class="fas fa-trash"></i></button>
+        </div>
+
+        <div class="row" style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px;">Question / Prompt</label>
+                <input type="text" class="step-question" placeholder="e.g. What type of haircut do you want?" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            
+            <div style="width: 200px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px;">Response Type</label>
+                <select class="step-type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="text">Free Text</option>
+                    <option value="number">Number</option>
+                    <option value="file">File Upload</option>
+                    <option value="yes_no">Yes / No</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Options Section (Only for multiple_choice) -->
+        <div class="options-section" style="margin-top: 15px; display: none;">
+            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px;">Choices (comma separated)</label>
+            <input type="text" class="step-options" placeholder="e.g. Fade, Buzz Cut, Dreadlocks" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div class="settings-row" style="margin-top: 15px; display: flex; gap: 20px; align-items: center;">
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" class="step-required" checked> Required
+            </label>
+
+            <!-- Logic for Yes/No Loop -->
+            <div class="loop-logic" style="display: none; align-items: center; gap: 10px;">
+                <label style="font-size: 13px;">If 'Yes', go to Step:</label>
+                <select class="step-loop-target" style="padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    // Initial script data from server
+    let scriptData = <%- JSON.stringify(script.steps || []) %>;
+    const businessId = "<%= business._id %>";
+
+    const container = document.getElementById('steps-container');
+    const template = document.getElementById('step-template');
+    const addBtn = document.getElementById('addStepBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    // Render initial steps
+    function render() {
+        container.innerHTML = '';
+        if(scriptData.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#999; font-style:italic;">No steps added yet. Click "Add New Step" to begin.</p>';
+            return;
+        }
+
+        scriptData.forEach((step, index) => {
+            const clone = template.content.cloneNode(true);
+            const card = clone.querySelector('.step-card');
+            
+            // Fill data
+            card.querySelector('.step-index').textContent = index + 1;
+            card.querySelector('.step-question').value = step.question || '';
+            card.querySelector('.step-type').value = step.type || 'text';
+            card.querySelector('.step-required').checked = step.required !== false;
+            
+            if(step.options && step.options.length > 0) {
+                card.querySelector('.step-options').value = step.options.join(', ');
+            }
+
+            // Handle Type Change
+            const typeSelect = card.querySelector('.step-type');
+            const optionsSection = card.querySelector('.options-section');
+            const loopLogic = card.querySelector('.loop-logic');
+
+            function updateVisibility() {
+                const val = typeSelect.value;
+                if(val === 'multiple_choice') {
+                    optionsSection.style.display = 'block';
+                } else {
+                    optionsSection.style.display = 'none';
+                }
+
+                if(val === 'yes_no') {
+                    loopLogic.style.display = 'flex';
+                    populateLoopTargets(card.querySelector('.step-loop-target'), index);
+                } else {
+                    loopLogic.style.display = 'none';
+                }
+            }
+
+            typeSelect.addEventListener('change', updateVisibility);
+            updateVisibility(); // Run once on load
+
+            // Set loop target if exists
+            if(step.loopTo) {
+                setTimeout(() => {
+                    card.querySelector('.step-loop-target').value = step.loopTo;
+                }, 0);
+            }
+
+            // Delete Event
+            card.querySelector('.delete-step-btn').addEventListener('click', () => {
+                scriptData.splice(index, 1);
+                render();
+            });
+
+            // Update Data on Input
+            const inputs = card.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('change', () => {
+                    updateStepData(index, card);
+                });
+                input.addEventListener('keyup', () => {
+                     updateStepData(index, card);
+                });
+            });
+
+            container.appendChild(card);
+        });
+    }
+
+    function populateLoopTargets(select, currentIndex) {
+        select.innerHTML = '<option value="">(Finish Script)</option>';
+        scriptData.forEach((s, i) => {
+            // Can loop back to any previous step or current step (though looping to self is weird without logic)
+            // Usually loops go back.
+            const stepId = `step_${i + 1}`;
+            select.innerHTML += `<option value="${stepId}">Step ${i + 1}</option>`;
+        });
+    }
+
+    function updateStepData(index, card) {
+        const step = scriptData[index];
+        step.question = card.querySelector('.step-question').value;
+        step.type = card.querySelector('.step-type').value;
+        step.required = card.querySelector('.step-required').checked;
+        
+        if(step.type === 'multiple_choice') {
+            const raw = card.querySelector('.step-options').value;
+            step.options = raw.split(',').map(s => s.trim()).filter(s => s);
+        } else {
+            step.options = [];
+        }
+
+        if(step.type === 'yes_no') {
+            step.loopTo = card.querySelector('.step-loop-target').value || null;
+        } else {
+            step.loopTo = null;
+        }
+
+        // Ensure stepId is set
+        step.stepId = `step_${index + 1}`;
+        
+        // Simple sequential nextStep
+        if (index < scriptData.length - 1) {
+            step.nextStep = `step_${index + 2}`;
+        } else {
+            step.nextStep = null;
+        }
+    }
+
+    addBtn.addEventListener('click', () => {
+        scriptData.push({
+            stepId: `step_${scriptData.length + 1}`,
+            type: 'text',
+            question: '',
+            required: true,
+            options: []
+        });
+        render();
+    });
+
+    saveBtn.addEventListener('click', async () => {
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        saveBtn.disabled = true;
+
+        try {
+            // Re-process stepIds to ensure they are sequential before saving
+            scriptData = scriptData.map((s, i) => ({
+                ...s,
+                stepId: `step_${i + 1}`,
+                nextStep: (i < scriptData.length - 1) ? `step_${i + 2}` : null
+            }));
+
+            const res = await fetch(`/sme/business/${businessId}/script`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steps: scriptData })
+            });
+            
+            const result = await res.json();
+            
+            if(result.success) {
+                // Show toast or alert
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                setTimeout(() => {
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Script';
+                    saveBtn.disabled = false;
+                }, 2000);
+            } else {
+                alert('Error saving script');
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Script';
+                saveBtn.disabled = false;
+            }
+        } catch(e) {
+            console.error(e);
+            alert('Network error');
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Script';
+            saveBtn.disabled = false;
+        }
+    });
+
+    // Init
+    render();
+
+</script>
+
+<%- include('../../partials/footer') %>

@@ -21,6 +21,14 @@
             <p style="color: #555; max-width: 700px; line-height: 1.6; margin: 0;">
                 <%= business.description || "No description available." %>
             </p>
+
+            <% if (business.category === 'service') { %>
+                <div style="margin-top: 20px;">
+                    <a href="/service/<%= business._id %>" class="auth-btn" style="text-decoration: none; display: inline-block;">
+                        <i class="fas fa-comments"></i> Start Service Request
+                    </a>
+                </div>
+            <% } %>
         </div>
     </div>
 

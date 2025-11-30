@@ -51,6 +51,54 @@
         <% } %>
     </div>
 
+    <!-- Tasks Section (For Service SMEs) -->
+    <% if (business.category === 'service' && tasks && tasks.length > 0) { %>
+        <div style="margin-top: 40px;">
+             <h3 class="section-title">Service Tasks Queue</h3>
+             <div style="display: flex; flex-direction: column; gap: 20px;">
+                <% tasks.forEach(task => { %>
+                    <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: 20px; border-left: 5px solid #9c27b0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                            <div>
+                                <span style="font-size: 12px; color: var(--text-muted);">CUSTOMER</span><br>
+                                <strong><%= task.consumer.name %></strong>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 12px; color: var(--text-muted);">STATUS</span><br>
+                                <span class="status-badge <%= task.status.toLowerCase().replace(' ', '-') %>" style="padding: 4px 8px; border-radius: 4px; font-size: 12px; background: #f3e5f5; color: #9c27b0;"><%= task.status %></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Task Answers -->
+                        <div style="background: #f9fafb; padding: 15px; border-radius: var(--radius-sm); margin-bottom: 15px;">
+                            <table style="width: 100%; font-size: 14px;">
+                                <% task.answers.forEach(ans => { %>
+                                    <tr>
+                                        <td style="color: var(--text-muted); padding: 4px 0; width: 40%;"><%= ans.question %>:</td>
+                                        <td style="font-weight: 600; padding: 4px 0;"><%= ans.answer %></td>
+                                    </tr>
+                                <% }) %>
+                            </table>
+                        </div>
+
+                        <!-- Actions -->
+                        <form action="/operator/tasks/update-status" method="POST" style="margin: 0; display: flex; justify-content: flex-end; gap: 10px;">
+                            <input type="hidden" name="taskId" value="<%= task._id %>">
+                            
+                            <% if (task.status === 'Pending') { %>
+                                <button type="submit" name="status" value="In Progress" style="background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Start Task</button>
+                            <% } else if (task.status === 'In Progress') { %>
+                                <button type="submit" name="status" value="Completed" style="background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Mark Complete</button>
+                            <% } else { %>
+                                <button disabled style="background: #eee; color: #999; border: none; padding: 8px 16px; border-radius: 4px;">Completed</button>
+                            <% } %>
+                        </form>
+                    </div>
+                <% }) %>
+             </div>
+        </div>
+    <% } %>
+
     <% if (orders.length === 0) { %>
         <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
             <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">

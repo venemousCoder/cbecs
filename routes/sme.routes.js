@@ -74,6 +74,10 @@ router.post('/business/:id/operators/add', operatorController.createOperator);
 router.get('/business/:id/operators', operatorController.getOperatorsList);
 router.post('/business/:id/operators/remove', operatorController.removeOperator);
 
+// --- Service Script Routes ---
+router.get('/business/:id/script', smeController.getScriptBuilder);
+router.post('/business/:id/script', smeController.saveScript);
+
 // --- Listing Routes ---
 router.get('/listings', listingController.getListings);
 router.get('/listings/add', listingController.getAddListingPage);

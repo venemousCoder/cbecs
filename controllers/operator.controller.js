@@ -3,6 +3,7 @@ const Business = require('../models/business');
 const Order = require('../models/order');
 const User = require('../models/user');
 const Category = require('../models/category');
+const ServiceTask = require('../models/serviceTask');
 
 // ... [Previous functions: getAddOperatorPage, createOperator, getOperatorDashboard, operatorUpdateStatus, getOperatorsList, removeOperator] ...
 
@@ -89,12 +90,19 @@ exports.getOperatorDashboard = async (req, res) => {
         // Fetch listings for this operator's business to display in dashboard
         const listings = await Listing.find({ business: business._id });
 
+        // Fetch Service Tasks (for service businesses)
+        // Tasks assigned to THIS operator
+        const tasks = await ServiceTask.find({ assignedOperator: req.user._id })
+            .populate('consumer', 'name phone email')
+            .sort({ createdAt: -1 });
+
         res.render('operator/dashboard', {
             title: `Operator Dashboard - ${business.name}`,
             user: req.user,
             business,
             orders,
-            listings // Passed listings to view
+            listings,
+            tasks // Passed tasks to view
         });
 
     } catch (err) {
@@ -128,6 +136,35 @@ exports.operatorUpdateStatus = async (req, res) => {
     }
 };
 
+// Operator Update Task Status
+exports.operatorUpdateTaskStatus = async (req, res) => {
+    try {
+        const { taskId, status } = req.body;
+        const task = await ServiceTask.findById(taskId);
+
+        if (!task) {
+             req.flash('error', 'Task not found.');
+             return res.redirect('/operator/dashboard');
+        }
+
+        // Check if assigned to this operator
+        if (task.assignedOperator.toString() !== req.user._id.toString()) {
+             req.flash('error', 'Unauthorized action.');
+             return res.redirect('/operator/dashboard');
+        }
+
+        task.status = status;
+        await task.save();
+
+        req.flash('success', 'Task status updated');
+        res.redirect('/operator/dashboard');
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Error updating task status');
+        res.redirect('/operator/dashboard');
+    }
+};
+
 // SME Owner View Operators List
 exports.getOperatorsList = async (req, res) => {
     try {
@@ -137,10 +174,34 @@ exports.getOperatorsList = async (req, res) => {
             return res.redirect('/sme/dashboard');
         }
 
+        // Add metrics if service business
+        let operatorsWithMetrics = [];
+        
+        if (business.category === 'service') {
+             // We need to manually attach metrics because .populate() just gives the User document
+             for (const op of business.operators) {
+                 const completedTasks = await ServiceTask.countDocuments({ 
+                     assignedOperator: op._id, 
+                     status: 'Completed' 
+                 });
+                 const pendingTasks = await ServiceTask.countDocuments({ 
+                     assignedOperator: op._id, 
+                     status: { $in: ['Pending', 'In Progress'] } 
+                 });
+
+                 operatorsWithMetrics.push({
+                     ...op.toObject(),
+                     metrics: { completedTasks, pendingTasks }
+                 });
+             }
+        } else {
+            operatorsWithMetrics = business.operators;
+        }
+
         res.render('sme/operators/index', {
             title: `Operators - ${business.name}`,
             business,
-            operators: business.operators,
+            operators: operatorsWithMetrics,
             user: req.user
         });
     } catch (err) {

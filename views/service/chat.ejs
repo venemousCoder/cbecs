@@ -1,0 +1,229 @@
+<%- include('../partials/header') %>
+
+<div class="container" style="padding: 30px 20px; min-height: 70vh;">
+    <div class="chat-wrapper" style="max-width: 600px; margin: 0 auto; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-md); display: flex; flex-direction: column; height: 70vh;">
+        
+        <!-- Header -->
+        <div style="padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; background: #f9fafb; border-radius: var(--radius-md) var(--radius-md) 0 0;">
+            <img src="<%= business.logo || '/public/assets/default-business.png' %>" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+            <div>
+                <h4 style="margin: 0; color: var(--secondary);"><%= business.name %></h4>
+                <span style="font-size: 12px; color: var(--text-muted);"><i class="fas fa-circle" style="color: var(--success); font-size: 8px;"></i> Online Assistant</span>
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="chat-box" style="flex: 1; padding: 20px; overflow-y: auto; background: white;">
+            
+            <!-- Initial Greeting -->
+            <div class="message bot">
+                <div class="bubble">
+                    Hi <%= user.name %>! Welcome to <%= business.name %>. Let's get your service request sorted.
+                </div>
+            </div>
+            
+            <!-- Dynamic Messages will appear here -->
+
+        </div>
+
+        <!-- Input Area -->
+        <div id="input-area" style="padding: 15px 20px; border-top: 1px solid #eee; background: #f9fafb; border-radius: 0 0 var(--radius-md) var(--radius-md);">
+            <!-- Inputs are injected dynamically based on question type -->
+            <div id="dynamic-input-container">
+                <button id="start-btn" class="auth-btn" style="width: 100%;">Start Service Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .message {
+        margin-bottom: 15px;
+        display: flex;
+        flex-direction: column;
+    }
+    .message.bot {
+        align-items: flex-start;
+    }
+    .message.user {
+        align-items: flex-end;
+    }
+    .bubble {
+        max-width: 80%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+    .message.bot .bubble {
+        background: #f0f2f5;
+        color: var(--text-main);
+        border-bottom-left-radius: 4px;
+    }
+    .message.user .bubble {
+        background: var(--primary);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+    
+    .option-btn {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        color: var(--text-main);
+        cursor: pointer;
+        transition: 0.2s;
+        text-align: left;
+    }
+    .option-btn:hover {
+        background: #f0f2f5;
+        border-color: #bbb;
+    }
+
+    .typing-indicator {
+        padding: 10px;
+        font-size: 12px;
+        color: #999;
+        font-style: italic;
+    }
+</style>
+
+<script>
+    const businessId = "<%= business._id %>";
+    const chatBox = document.getElementById('chat-box');
+    const inputContainer = document.getElementById('dynamic-input-container');
+    let sessionId = null;
+
+    function scrollToBottom() {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addMessage(text, sender) {
+        const div = document.createElement('div');
+        div.className = `message ${sender}`;
+        div.innerHTML = `<div class="bubble">${text}</div>`;
+        chatBox.appendChild(div);
+        scrollToBottom();
+    }
+
+    function renderInput(step) {
+        inputContainer.innerHTML = '';
+        
+        if (!step) return; // Should not happen unless completed
+
+                if (step.type === 'multiple_choice') {
+                    step.options.forEach(opt => {
+                        const label = typeof opt === 'object' ? opt.label : opt;
+                        const btn = document.createElement('button');
+                        btn.className = 'option-btn';
+                        btn.textContent = label;
+                        btn.onclick = () => submitAnswer(label);
+                        inputContainer.appendChild(btn);
+                    });
+                }          else if (step.type === 'yes_no') {
+            ['Yes', 'No'].forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = opt;
+                btn.onclick = () => submitAnswer(opt);
+                inputContainer.appendChild(btn);
+            });
+        }
+        else if (step.type === 'text' || step.type === 'number') {
+            const input = document.createElement('input');
+            input.type = step.type === 'number' ? 'number' : 'text';
+            input.className = 'auth-input'; // reusing class
+            input.style.marginBottom = '10px';
+            input.placeholder = 'Type your answer...';
+            
+            const btn = document.createElement('button');
+            btn.className = 'auth-btn';
+            btn.textContent = 'Send';
+            btn.style.width = '100%';
+            btn.onclick = () => {
+                if(input.value.trim()) submitAnswer(input.value);
+            };
+            
+            // Allow Enter key
+            input.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter' && input.value.trim()) submitAnswer(input.value);
+            });
+
+            inputContainer.appendChild(input);
+            inputContainer.appendChild(btn);
+            input.focus();
+        }
+        else {
+            // Fallback
+             addMessage("Input type not supported yet.", 'bot');
+        }
+    }
+
+    async function submitAnswer(answer) {
+        // Add user message
+        addMessage(answer, 'user');
+        
+        // Show loading/typing
+        inputContainer.innerHTML = '<div class="typing-indicator">Assistant is typing...</div>';
+
+        try {
+            const res = await fetch('/service/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId, answer })
+            });
+            const data = await res.json();
+
+            if (data.completed) {
+                addMessage("Thank you! Your request has been submitted to an operator.", 'bot');
+                inputContainer.innerHTML = `
+                    <div style="text-align: center; padding: 10px;">
+                        <a href="/sme/dashboard" class="auth-btn" style="text-decoration: none; display: block; width: 100%;">Done</a>
+                    </div>`; // Or redirect to orders page
+            } else {
+                // Next Question
+                addMessage(data.step.question, 'bot');
+                renderInput(data.step);
+            }
+
+        } catch (err) {
+            console.error(err);
+            addMessage("Something went wrong. Please try again.", 'bot');
+        }
+    }
+
+    // Start Session
+    document.getElementById('start-btn').addEventListener('click', async () => {
+        inputContainer.innerHTML = '<div class="typing-indicator">Starting...</div>';
+        
+        try {
+            const res = await fetch('/service/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ businessId })
+            });
+            const data = await res.json();
+            
+            if (data.error) {
+                addMessage(data.error, 'bot');
+                inputContainer.innerHTML = '';
+                return;
+            }
+
+            sessionId = data.sessionId;
+            addMessage(data.step.question, 'bot');
+            renderInput(data.step);
+
+        } catch (err) {
+            console.error(err);
+            addMessage("Could not start chat. Refresh page.", 'bot');
+        }
+    });
+
+</script>
+
+<%- include('../partials/footer') %>

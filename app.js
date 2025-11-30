@@ -59,7 +59,9 @@ app.use((req, res, next) => {
 
 // Routes settings
 const indexRouter = require('./routes/index.routes');
+const serviceRouter = require('./routes/service.routes');
 app.use('/', indexRouter);
+app.use('/service', serviceRouter);
 
 
 // Socket.io connection
