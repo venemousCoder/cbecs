@@ -107,15 +107,18 @@ exports.postCheckout = async (req, res) => {
         
         const order = new Order({
             user: req.user._id,
+            type: 'product_order',
             items: cart.items.map(item => ({
                 listing: item.listingId,
                 business: item.businessId, // Using the saved businessId
                 quantity: item.qty,
                 price: item.price,
                 name: item.name,
+                image: item.image,
                 status: 'pending'
             })),
-            totalAmount: cart.totalPrice
+            totalAmount: cart.totalPrice,
+            status: 'pending'
         });
 
         await order.save();

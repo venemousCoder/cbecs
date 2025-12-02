@@ -1,7 +1,7 @@
 <%- include('../partials/header') %>
 
 <div class="container" style="padding: 30px 20px; min-height: 60vh;">
-    <h2 class="section-title" style="margin-bottom: 30px;">My Orders</h2>
+    <h2 class="section-title" style="margin-bottom: 20px;">My Activity</h2>
 
     <% if (locals.success && locals.success.length > 0) { %>
         <div style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm);">
@@ -9,65 +9,209 @@
         </div>
     <% } %>
 
-    <% if (orders.length === 0) { %>
-        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-            <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
-                <i class="fas fa-receipt"></i>
-            </div>
-            <h3 style="color: var(--secondary);">No Orders Yet</h3>
-            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 30px;">You haven't placed any orders or bookings yet.</p>
-            <a href="/categories" class="search-button" style="display: inline-block; text-decoration: none;">Browse Categories</a>
-        </div>
-    <% } else { %>
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <% orders.forEach(order => { %>
-                <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden;">
-                    <!-- Order Header -->
-                    <div style="padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <div>
-                            <span style="font-size: 12px; color: var(--text-muted); display: block;">ORDER PLACED</span>
-                            <span style="font-weight: 600; color: var(--secondary);"><%= new Date(order.createdAt).toLocaleDateString() %></span>
-                        </div>
-                        <div>
-                            <span style="font-size: 12px; color: var(--text-muted); display: block;">TOTAL</span>
-                            <span style="font-weight: 600; color: var(--secondary);">R<%= order.totalAmount.toFixed(2) %></span>
-                        </div>
-                        <div>
-                            <span style="font-size: 12px; color: var(--text-muted); display: block;">ORDER #</span>
-                            <span style="font-weight: 600; color: var(--secondary);"><%= order._id.toString().slice(-8).toUpperCase() %></span>
-                        </div>
-                    </div>
+    <!-- Tabs -->
+    <div style="display: flex; gap: 20px; border-bottom: 1px solid #ddd; margin-bottom: 20px;">
+        <button onclick="switchTab('products')" id="tab-products" class="tab-btn active">Product Orders</button>
+        <button onclick="switchTab('services')" id="tab-services" class="tab-btn">Service Requests</button>
+    </div>
 
-                    <!-- Order Items -->
-                    <div style="padding: 20px;">
-                        <% order.items.forEach(item => { %>
-                            <div style="display: flex; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f0f0f0; last-child: border-bottom: none;">
-                                <div style="width: 60px; height: 60px; background: #f9fafb; border-radius: 4px; overflow: hidden; flex-shrink: 0;">
-                                    <img src="<%= item.listing ? item.listing.image : 'https://placehold.co/60' %>" alt="<%= item.name %>" style="width: 100%; height: 100%; object-fit: cover;">
-                                </div>
-                                <div style="flex: 1;">
-                                    <h4 style="margin: 0 0 5px 0; font-size: 16px; color: var(--secondary);"><%= item.name %></h4>
-                                    <p style="margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted);">Sold by: <%= item.business ? item.business.name : 'Unknown' %></p>
-                                    <div style="display: flex; gap: 10px; align-items: center;">
-                                        <span style="font-weight: bold; color: var(--primary);">R<%= item.price.toFixed(2) %></span>
-                                        <span style="font-size: 12px; color: var(--text-muted);">Qty: <%= item.quantity %></span>
-                                        
-                                        <!-- Status Badge -->
-                                        <span style="font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; 
-                                            <% if (item.status === 'completed') { %> background: #dcfce7; color: #166534; 
-                                            <% } else if (item.status === 'cancelled') { %> background: #fee2e2; color: #991b1b;
-                                            <% } else { %> background: #ffedd5; color: #9a3412; <% } %>">
-                                            <%= item.status %>
-                                        </span>
+    <!-- Product Orders Content -->
+    <div id="content-products" class="tab-content">
+        <% const productOrders = orders.filter(o => o.type === 'product_order'); %>
+        <% if (productOrders.length === 0) { %>
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <h3>No Product Orders</h3>
+                <p>You haven't purchased any products yet.</p>
+                <a href="/categories" class="search-button">Start Shopping</a>
+            </div>
+        <% } else { %>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <% productOrders.forEach(order => { %>
+                    <div class="order-card">
+                        <!-- Order Header -->
+                        <div class="order-header">
+                            <div>
+                                <span class="label">ORDER PLACED</span>
+                                <span class="value"><%= new Date(order.createdAt).toLocaleDateString() %></span>
+                            </div>
+                            <div>
+                                <span class="label">TOTAL</span>
+                                <span class="value">R<%= order.totalAmount.toFixed(2) %></span>
+                            </div>
+                            <div>
+                                <span class="label">ORDER #</span>
+                                <span class="value"><%= order._id.toString().slice(-8).toUpperCase() %></span>
+                            </div>
+                        </div>
+
+                        <!-- Order Items -->
+                        <div style="padding: 20px;">
+                            <% order.items.forEach(item => { %>
+                                <div class="order-item">
+                                    <div class="item-img">
+                                        <img src="<%= item.image || 'https://placehold.co/60' %>" alt="<%= item.name %>">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <h4 class="item-title"><%= item.name %></h4>
+                                        <p class="item-meta">Sold by: <%= item.business ? item.business.name : 'Unknown' %></p>
+                                        <div style="display: flex; gap: 10px; align-items: center;">
+                                            <span style="font-weight: bold; color: var(--primary);">R<%= item.price.toFixed(2) %></span>
+                                            <span style="font-size: 12px; color: var(--text-muted);">Qty: <%= item.quantity %></span>
+                                            <span class="status-badge <%= item.status %>"><%= item.status %></span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        <% }) %>
+                            <% }) %>
+                        </div>
                     </div>
-                </div>
-            <% }) %>
-        </div>
-    <% } %>
+                <% }) %>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Service Requests Content -->
+    <div id="content-services" class="tab-content" style="display: none;">
+        <% const serviceRequests = orders.filter(o => o.type === 'service_request'); %>
+        <% if (serviceRequests.length === 0) { %>
+            <div class="empty-state">
+                <i class="fas fa-tools"></i>
+                <h3>No Service Requests</h3>
+                <p>You haven't booked any services yet.</p>
+                <a href="/categories" class="search-button">Find Services</a>
+            </div>
+        <% } else { %>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <% serviceRequests.forEach(req => { %>
+                    <div class="order-card service-card">
+                        <div class="order-header">
+                            <div>
+                                <span class="label">REQUESTED ON</span>
+                                <span class="value"><%= new Date(req.createdAt).toLocaleDateString() %></span>
+                            </div>
+                            <div>
+                                <span class="label">STATUS</span>
+                                <span class="status-badge <%= req.status %>"><%= req.status.replace('_', ' ').toUpperCase() %></span>
+                            </div>
+                            <div>
+                                <span class="label">ID #</span>
+                                <span class="value"><%= req._id.toString().slice(-8).toUpperCase() %></span>
+                            </div>
+                        </div>
+                        <div style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 class="item-title" style="font-size: 18px; margin-bottom: 5px;">
+                                    <i class="fas fa-store" style="color: var(--primary);"></i> 
+                                    <%= req.serviceDetails.business ? req.serviceDetails.business.name : 'Unknown Shop' %>
+                                </h4>
+                                <p class="item-meta" style="font-size: 14px; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fas fa-user-headset"></i> 
+                                    Operator: <strong><%= req.serviceDetails.operator ? req.serviceDetails.operator.name : 'Pending Assignment' %></strong>
+                                </p>
+                            </div>
+                            
+                            <% if (req.status === 'pending' || req.status === 'confirmed') { %>
+                                <div style="text-align: center; background: #f0f9ff; padding: 10px 20px; border-radius: 8px; border: 1px solid #bae6fd;">
+                                    <span style="display: block; font-size: 12px; color: #0369a1; font-weight: 600;">QUEUE POSITION</span>
+                                    <span style="font-size: 24px; font-weight: bold; color: #0284c7;"><%= req.serviceDetails.queuePosition %></span>
+                                    <span style="display: block; font-size: 11px; color: #64748b;">~<%= req.serviceDetails.estimatedWaitTime %> mins wait</span>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } %>
+    </div>
+
 </div>
+
+<style>
+    .tab-btn {
+        background: none;
+        border: none;
+        padding: 10px 20px;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+    .empty-state {
+        text-align: center; 
+        padding: 60px 20px; 
+        background: white; 
+        border-radius: var(--radius-md); 
+        box-shadow: var(--shadow-sm);
+    }
+    .empty-state i {
+        font-size: 48px; 
+        color: var(--text-muted); 
+        margin-bottom: 20px;
+    }
+    .empty-state h3 { color: var(--secondary); margin-top: 0; }
+    .empty-state p { color: var(--text-muted); max-width: 400px; margin: 0 auto 30px; }
+
+    .order-card {
+        background: white; 
+        border-radius: var(--radius-md); 
+        box-shadow: var(--shadow-sm); 
+        overflow: hidden;
+    }
+    .order-header {
+        padding: 15px 20px; 
+        background: #f9fafb; 
+        border-bottom: 1px solid #eee; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        flex-wrap: wrap; 
+        gap: 10px;
+    }
+    .label { font-size: 11px; color: var(--text-muted); display: block; font-weight: 600; letter-spacing: 0.5px; }
+    .value { font-weight: 600; color: var(--secondary); font-size: 14px; }
+    
+    .order-item {
+        display: flex; 
+        gap: 15px; 
+        margin-bottom: 15px; 
+        padding-bottom: 15px; 
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .order-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    
+    .item-img {
+        width: 60px; height: 60px; background: #f9fafb; border-radius: 4px; overflow: hidden; flex-shrink: 0;
+    }
+    .item-img img { width: 100%; height: 100%; object-fit: cover; }
+    .item-title { margin: 0 0 5px 0; font-size: 16px; color: var(--secondary); }
+    .item-meta { margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted); }
+
+    .status-badge {
+        font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; 
+    }
+    .status-badge.pending { background: #ffedd5; color: #9a3412; }
+    .status-badge.completed { background: #dcfce7; color: #166534; }
+    .status-badge.cancelled { background: #fee2e2; color: #991b1b; }
+    .status-badge.in_progress { background: #e0f2fe; color: #075985; }
+</style>
+
+<script>
+    function switchTab(tabName) {
+        // Hide all content
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        // Deactivate all buttons
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        // Show selected content
+        document.getElementById('content-' + tabName).style.display = 'block';
+        // Activate button
+        document.getElementById('tab-' + tabName).classList.add('active');
+    }
+</script>
 
 <%- include('../partials/footer') %>

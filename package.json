@@ -22,7 +22,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test": "jest app"
+    "test": "jest"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -40,5 +40,8 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
   }
 }

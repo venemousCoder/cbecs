@@ -7,36 +7,72 @@ const OrderSchema = new Schema({
         ref: 'User',
         required: true
     },
+    type: {
+        type: String,
+        enum: ['product_order', 'service_request'],
+        required: true
+    },
+    // For Product Orders
     items: [{
         listing: {
             type: Schema.Types.ObjectId,
-            ref: 'Listing',
-            required: true
+            ref: 'Listing'
         },
         business: {
             type: Schema.Types.ObjectId,
-            ref: 'Business',
-            required: true
+            ref: 'Business'
         },
         quantity: {
             type: Number,
-            required: true,
             min: 1
         },
         price: {
-            type: Number,
-            required: true
+            type: Number
         },
         name: String,
+        image: String,
         status: {
             type: String,
-            enum: ['pending', 'processing', 'completed', 'cancelled'],
+            enum: ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
             default: 'pending'
         }
     }],
+    // For Service Requests
+    serviceDetails: {
+        listing: {
+            type: Schema.Types.ObjectId,
+            ref: 'Listing'
+        },
+        business: {
+            type: Schema.Types.ObjectId,
+            ref: 'Business'
+        },
+        operator: {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        scriptAnswers: [{
+            question: String,
+            answer: Schema.Types.Mixed
+        }],
+        queuePosition: {
+            type: Number,
+            default: 0
+        },
+        estimatedWaitTime: {
+            type: Number, // in minutes
+            default: 0
+        }
+    },
     totalAmount: {
         type: Number,
-        required: true
+        required: true,
+        default: 0
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'confirmed', 'in_progress', 'ready', 'completed', 'cancelled'],
+        default: 'pending'
     },
     createdAt: {
         type: Date,

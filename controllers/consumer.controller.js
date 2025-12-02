@@ -125,7 +125,8 @@ exports.searchListings = async (req, res) => {
 // Get Shop Details
 exports.getShopDetails = async (req, res) => {
     try {
-        const business = await Business.findById(req.params.id);
+        // Populate operators to get queue info
+        const business = await Business.findById(req.params.id).populate('operators');
         
         if (!business) {
             req.flash('error', 'Shop not found');

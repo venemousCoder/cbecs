@@ -1,6 +1,7 @@
 const Business = require('../models/business');
 const Order = require('../models/order');
 const ServiceScript = require('../models/serviceScript');
+const { createNotification } = require('../utils/notification');
 
 // Render the Create Business Page
 exports.getCreateBusinessPage = (req, res) => {
@@ -209,6 +210,10 @@ exports.updateOrderItemStatus = async (req, res) => {
         // Update status
         item.status = status;
         await order.save();
+
+        // Notify Customer
+        const message = `Your order for ${item.name} is now ${status.toUpperCase()}.`;
+        await createNotification(order.user, 'order_update', message, order._id);
 
         req.flash('success', 'Order status updated');
         res.redirect('/sme/orders');

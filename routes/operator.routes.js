@@ -37,7 +37,7 @@ function checkFileType(file, cb) {
 // Operator Dashboard
 router.get('/dashboard', ensureAuthenticated, ensureRole('operator'), operatorController.getOperatorDashboard);
 router.post('/orders/update-status', ensureAuthenticated, ensureRole('operator'), operatorController.operatorUpdateStatus);
-router.post('/tasks/update-status', ensureAuthenticated, ensureRole('operator'), operatorController.operatorUpdateTaskStatus);
+router.post('/services/update-status', ensureAuthenticated, ensureRole('operator'), operatorController.operatorUpdateServiceStatus);
 
 // Operator Listing Routes
 router.get('/listings/add', ensureAuthenticated, ensureRole('operator'), operatorController.getOperatorAddListingPage);

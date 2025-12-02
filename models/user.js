@@ -34,6 +34,15 @@ const UserSchema = new Schema({
         ref: 'Business',
         default: null
     },
+    // Operator specific fields
+    queueLength: {
+        type: Number,
+        default: 0
+    },
+    isAvailable: {
+        type: Boolean,
+        default: true
+    },
     createdAt: {
         type: Date,
         default: Date.now

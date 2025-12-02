@@ -47,15 +47,25 @@ app.use(passport.session());
 require('./config/passport')(passport);
 
 const Category = require('./models/category');
+const Notification = require('./models/notification');
 
 // Global variables for views
 app.use(async (req, res, next) => {
     try {
         const allCategories = await Category.find();
         res.locals.allCategories = allCategories;
+        
+        if (req.user) {
+            const unreadCount = await Notification.countDocuments({ recipient: req.user._id, read: false });
+            res.locals.unreadNotifications = unreadCount;
+        } else {
+            res.locals.unreadNotifications = 0;
+        }
+
     } catch (err) {
-        console.error("Error fetching global categories:", err);
+        console.error("Error fetching global data:", err);
         res.locals.allCategories = [];
+        res.locals.unreadNotifications = 0;
     }
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
@@ -69,8 +79,11 @@ app.use(async (req, res, next) => {
 // Routes settings
 const indexRouter = require('./routes/index.routes');
 const serviceRouter = require('./routes/service.routes');
+const notificationRouter = require('./routes/notification.routes');
+
 app.use('/', indexRouter);
 app.use('/service', serviceRouter);
+app.use('/notifications', notificationRouter);
 
 
 // Socket.io connection
@@ -83,12 +96,30 @@ io.on('connection', (socket) => {
 
 
 // Database connection and server start
-mongoose.connect(MONGO_URI).then(() => {
-    console.log('Connected to MongoDB');
-    const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-    });
-}).catch(err => {
-    console.error('Database connection error:', err);
-});
+const startServer = async () => {
+    try {
+        // Use test database if in test environment
+        const dbUri = process.env.NODE_ENV === 'test' 
+            ? 'mongodb://127.0.0.1:27017/cbecs_test' 
+            : MONGO_URI;
+
+        await mongoose.connect(dbUri);
+        console.log(`Connected to MongoDB (${process.env.NODE_ENV === 'test' ? 'Test' : 'Production/Dev'})`);
+        
+        // Only listen if not in test mode (supertest handles the server) or if explicitly started
+        if (process.env.NODE_ENV !== 'test') {
+            const PORT = process.env.PORT || 3000;
+            server.listen(PORT, () => {
+                console.log(`Server is running on port ${PORT}`);
+            });
+        }
+    } catch (err) {
+        console.error('Database connection error:', err);
+    }
+};
+
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = { app, server, mongoose, startServer };

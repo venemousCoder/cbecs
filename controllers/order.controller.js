@@ -6,6 +6,9 @@ exports.getConsumerOrders = async (req, res) => {
         const orders = await Order.find({ user: req.user._id })
             .populate('items.listing')
             .populate('items.business')
+            // Populate Service Request details
+            .populate('serviceDetails.business')
+            .populate('serviceDetails.operator')
             .sort({ createdAt: -1 });
 
         res.render('orders/index', {

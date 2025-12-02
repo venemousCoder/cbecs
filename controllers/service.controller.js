@@ -153,7 +153,11 @@ exports.uploadFile = async (req, res) => {
     }
 };
 
-// Helper to create task
+const Order = require('../models/order');
+
+// ... (existing imports and functions)
+
+// Helper to create task (Refactored to create Order)
 async function createTaskFromSession(session) {
     let operatorId = session.operator;
 
@@ -162,39 +166,51 @@ async function createTaskFromSession(session) {
         const business = await Business.findById(session.business).populate('operators');
         
         if (business.operators && business.operators.length > 0) {
-            // Simple Load Balancing: Find operator with fewest PENDING tasks
-            // We need to query ServiceTask to count pending tasks for each operator
-            
-            let bestOperator = business.operators[0]._id;
-            let minTasks = Infinity;
+            // Simple Load Balancing: Find operator with shortest queue
+            let bestOperator = business.operators[0];
+            let minQueue = bestOperator.queueLength || 0;
 
             for (const op of business.operators) {
-                const count = await ServiceTask.countDocuments({ 
-                    assignedOperator: op._id, 
-                    status: { $in: ['Pending', 'In Progress'] } 
-                });
-                
-                if (count < minTasks) {
-                    minTasks = count;
-                    bestOperator = op._id;
+                if ((op.queueLength || 0) < minQueue) {
+                    minQueue = op.queueLength || 0;
+                    bestOperator = op;
                 }
             }
-            operatorId = bestOperator;
+            operatorId = bestOperator._id;
         } else {
             // Fallback to owner
             operatorId = session.business.owner; 
         }
     }
 
-    const newTask = new ServiceTask({
-        business: session.business,
-        consumer: session.consumer,
-        session: session._id,
-        answers: session.responses,
-        assignedOperator: operatorId
+    // Calculate Queue Position & Wait Time
+    // Position is current queue length + 1
+    const operatorUser = await User.findById(operatorId);
+    const queuePos = (operatorUser.queueLength || 0) + 1;
+    const estWait = queuePos * 15; // Assuming 15 mins per task roughly
+
+    // Create unified Order of type 'service_request'
+    const newOrder = new Order({
+        user: session.consumer,
+        type: 'service_request',
+        serviceDetails: {
+            business: session.business,
+            operator: operatorId,
+            scriptAnswers: session.responses,
+            queuePosition: queuePos,
+            estimatedWaitTime: estWait
+        },
+        totalAmount: 0, // Service requests might be quoted later or fixed price not yet implemented
+        status: 'pending'
     });
 
-    await newTask.save();
+    await newOrder.save();
+
+    // Update Operator's Queue Length
+    if (operatorUser) {
+        operatorUser.queueLength = (operatorUser.queueLength || 0) + 1;
+        await operatorUser.save();
+    }
 }
 
 // 3. Get Chat Page

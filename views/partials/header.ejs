@@ -71,6 +71,17 @@
                                 <span>Dashboard</span>
                             </a>
                         <% } %>
+                        
+                        <a href="/notifications" class="user-action" style="position: relative;">
+                            <div style="position: relative;">
+                                <i class="far fa-bell"></i>
+                                <% if (locals.unreadNotifications > 0) { %>
+                                    <span class="cart-count-badge" style="background: #d32f2f;"><%= unreadNotifications %></span>
+                                <% } %>
+                            </div>
+                            <span>Alerts</span>
+                        </a>
+
                     <% } else { %>
                         <a href="/login" class="user-action">
                             <i class="far fa-user"></i>

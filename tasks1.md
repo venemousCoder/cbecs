@@ -6,9 +6,7 @@
 
 ## **Phase 5.1 — Database Structure & Listing Types**
 
-### **Objective:**
-
-Separate retail products from service shops in the data model.
+### **Objective: Separate retail products from service shops in the data model.**
 
 ---
 

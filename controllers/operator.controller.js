@@ -3,7 +3,7 @@ const Business = require('../models/business');
 const Order = require('../models/order');
 const User = require('../models/user');
 const Category = require('../models/category');
-const ServiceTask = require('../models/serviceTask');
+const { createNotification } = require('../utils/notification');
 
 // ... [Previous functions: getAddOperatorPage, createOperator, getOperatorDashboard, operatorUpdateStatus, getOperatorsList, removeOperator] ...
 
@@ -90,11 +90,24 @@ exports.getOperatorDashboard = async (req, res) => {
         // Fetch listings for this operator's business to display in dashboard
         const listings = await Listing.find({ business: business._id });
 
-        // Fetch Service Tasks (for service businesses)
-        // Tasks assigned to THIS operator
-        const tasks = await ServiceTask.find({ assignedOperator: req.user._id })
-            .populate('consumer', 'name phone email')
-            .sort({ createdAt: -1 });
+        // Fetch Service Requests (Orders of type 'service_request') assigned to THIS operator
+        const serviceRequests = await Order.find({
+            type: 'service_request',
+            'serviceDetails.operator': req.user._id
+        })
+        .populate('user', 'name phone email')
+        .sort({ createdAt: -1 });
+
+        // Calculate Queue Length (Pending + In Progress)
+        const queueLength = serviceRequests.filter(
+            req => ['pending', 'confirmed', 'in_progress'].includes(req.status)
+        ).length;
+
+        // Update user's queue length in DB to ensure sync
+        if (req.user.queueLength !== queueLength) {
+            req.user.queueLength = queueLength;
+            await req.user.save();
+        }
 
         res.render('operator/dashboard', {
             title: `Operator Dashboard - ${business.name}`,
@@ -102,7 +115,8 @@ exports.getOperatorDashboard = async (req, res) => {
             business,
             orders,
             listings,
-            tasks // Passed tasks to view
+            serviceRequests,
+            queueLength
         });
 
     } catch (err) {
@@ -136,31 +150,52 @@ exports.operatorUpdateStatus = async (req, res) => {
     }
 };
 
-// Operator Update Task Status
-exports.operatorUpdateTaskStatus = async (req, res) => {
+// Operator Update Service Request Status
+exports.operatorUpdateServiceStatus = async (req, res) => {
     try {
-        const { taskId, status } = req.body;
-        const task = await ServiceTask.findById(taskId);
+        const { orderId, status } = req.body;
+        const order = await Order.findById(orderId).populate('serviceDetails.business');
 
-        if (!task) {
-             req.flash('error', 'Task not found.');
+        if (!order) {
+             req.flash('error', 'Service request not found.');
              return res.redirect('/operator/dashboard');
         }
 
         // Check if assigned to this operator
-        if (task.assignedOperator.toString() !== req.user._id.toString()) {
+        if (order.serviceDetails.operator.toString() !== req.user._id.toString()) {
              req.flash('error', 'Unauthorized action.');
              return res.redirect('/operator/dashboard');
         }
 
-        task.status = status;
-        await task.save();
+        const oldStatus = order.status;
+        order.status = status;
+        await order.save();
 
-        req.flash('success', 'Task status updated');
+        // Manage Queue Length
+        // If moving FROM active state TO terminal state, decrement queue
+        const activeStates = ['pending', 'confirmed', 'in_progress'];
+        const terminalStates = ['completed', 'cancelled', 'ready'];
+
+        if (activeStates.includes(oldStatus) && terminalStates.includes(status)) {
+            req.user.queueLength = Math.max(0, (req.user.queueLength || 0) - 1);
+            await req.user.save();
+        }
+        // If moving FROM terminal TO active (re-opening), increment queue
+        else if (terminalStates.includes(oldStatus) && activeStates.includes(status)) {
+            req.user.queueLength = (req.user.queueLength || 0) + 1;
+            await req.user.save();
+        }
+
+        // Send Notification
+        const businessName = order.serviceDetails.business ? order.serviceDetails.business.name : 'Service Provider';
+        const message = `Your service request with ${businessName} is now ${status.replace('_', ' ').toUpperCase()}.`;
+        await createNotification(order.user, 'service_update', message, order._id);
+
+        req.flash('success', 'Service status updated');
         res.redirect('/operator/dashboard');
     } catch (err) {
         console.error(err);
-        req.flash('error', 'Error updating task status');
+        req.flash('error', 'Error updating service status');
         res.redirect('/operator/dashboard');
     }
 };
