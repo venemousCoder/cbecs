@@ -46,8 +46,17 @@ app.use(passport.session());
 // Passport Config
 require('./config/passport')(passport);
 
+const Category = require('./models/category');
+
 // Global variables for views
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
+    try {
+        const allCategories = await Category.find();
+        res.locals.allCategories = allCategories;
+    } catch (err) {
+        console.error("Error fetching global categories:", err);
+        res.locals.allCategories = [];
+    }
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
     res.locals.currentUser = req.user;

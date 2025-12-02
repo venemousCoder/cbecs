@@ -1,264 +1,905 @@
 <%- include('../../partials/header') %>
 
-<div class="container" style="padding: 30px 20px; min-height: 60vh;">
-    <div class="row">
-        <div class="col-md-12">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div>
-                    <a href="/sme/dashboard" style="color: var(--text-muted); font-size: 14px; text-decoration: none;"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-                    <h2 style="margin-top: 10px; color: var(--secondary);">Service Flow Builder: <%= business.name %></h2>
-                    <p style="color: var(--text-muted);">Design the conversation flow your customers will see when booking a service.</p>
-                </div>
-                <button id="saveBtn" class="auth-btn" style="margin: 0;">
-                    <i class="fas fa-save"></i> Save Script
+<style>
+    /* Canvas Styles */
+    #canvas-wrapper {
+        width: 100%;
+        height: 80vh;
+        background-color: #f0f0f0;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid #ccc;
+        cursor: grab;
+    }
+    
+    #canvas-wrapper:active {
+        cursor: grabbing;
+    }
+
+    #canvas-content {
+        position: absolute;
+        transform-origin: 0 0;
+        width: 5000px;
+        height: 5000px;
+        background-image: radial-gradient(#ccc 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+
+    /* SVG Layer for Lines */
+    #svg-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* Allow clicks to pass through to nodes */
+        z-index: 0; /* Behind nodes */
+    }
+    
+    .connection-line {
+        stroke: #999;
+        stroke-width: 2;
+        fill: none;
+        pointer-events: stroke; /* Allow clicking the line itself */
+        cursor: pointer;
+    }
+    
+    .connection-line:hover {
+        stroke: var(--primary);
+        stroke-width: 3;
+    }
+
+    /* Toolbar & Sidebar */
+    #toolbar {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 100;
+        display: flex;
+        gap: 10px;
+    }
+
+    #properties-sidebar {
+        position: fixed;
+        right: -350px;
+        top: 80px;
+        bottom: 20px;
+        width: 320px;
+        background: white;
+        border-left: 1px solid #eee;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.05);
+        padding: 20px;
+        transition: right 0.3s ease;
+        z-index: 100;
+        overflow-y: auto;
+    }
+    
+    #properties-sidebar.open {
+        right: 0;
+    }
+    
+    /* Node Styles */
+    .node {
+        position: absolute;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        width: 250px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        user-select: none;
+        z-index: 1;
+    }
+    
+    .node-header {
+        padding: 10px;
+        background: #f9fafb;
+        border-bottom: 1px solid #eee;
+        border-radius: 8px 8px 0 0;
+        font-weight: 600;
+        cursor: move;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .node-body {
+        padding: 10px;
+    }
+    
+    .node-selected {
+        border: 2px solid var(--primary);
+        box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.3);
+    }
+
+    /* Connection Handles */
+    .handle {
+        width: 12px;
+        height: 12px;
+        background: white;
+        border: 2px solid #777;
+        border-radius: 50%;
+        position: absolute;
+        cursor: crosshair;
+        z-index: 2;
+    }
+    
+    .handle:hover {
+        background: var(--primary);
+        border-color: var(--primary);
+        transform: scale(1.2);
+    }
+
+    .input-handle {
+        top: -7px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .output-handle {
+        right: -7px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* Start Node specific */
+    .start-node {
+        border: 2px solid var(--success);
+    }
+    .start-node .node-header {
+        background: #ecfdf5;
+        color: var(--success);
+    }
+
+</style>
+
+<div class="container-fluid" style="padding: 0;">
+    
+    <!-- Toolbar -->
+    <div id="toolbar">
+        <button id="addNodeBtn" class="auth-btn" style="padding: 8px 15px; font-size: 14px;">
+            <i class="fas fa-plus"></i> Add Question
+        </button>
+        <button id="zoomInBtn" class="btn btn-light btn-sm"><i class="fas fa-search-plus"></i></button>
+        <button id="zoomOutBtn" class="btn btn-light btn-sm"><i class="fas fa-search-minus"></i></button>
+        <button id="saveScriptBtn" class="auth-btn" style="background: var(--success); padding: 8px 15px; font-size: 14px;">
+            <i class="fas fa-save"></i> Save
+        </button>
+    </div>
+
+    <!-- Properties Sidebar -->
+    <div id="properties-sidebar">
+        <h5 style="margin-bottom: 20px; display: flex; justify-content: space-between;">
+            Properties
+            <button id="closeSidebar" style="background:none; border:none; cursor:pointer;"><i class="fas fa-times"></i></button>
+        </h5>
+        
+        <div id="sidebar-content" style="display: none;">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-size: 12px; font-weight: 600;">Question Text</label>
+                <textarea id="prop-question" class="form-control" rows="3" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-size: 12px; font-weight: 600;">Input Type</label>
+                <select id="prop-type" class="form-control" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="text">Free Text</option>
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="yes_no">Yes / No</option>
+                    <option value="number">Number</option>
+                    <option value="file">File Upload</option>
+                    <option value="review_summary">Review Summary</option>
+                </select>
+            </div>
+            
+            <div id="prop-options-container" style="display: none;">
+                <label style="font-size: 12px; font-weight: 600;">Answer Options</label>
+                <div id="prop-options-list" style="margin-bottom: 10px;"></div>
+                <button id="prop-add-option" style="width: 100%; padding: 5px; background: #f0f2f5; border: 1px dashed #ccc; font-size: 12px;">+ Add Option</button>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                <button id="deleteNodeBtn" style="width: 100%; padding: 8px; background: #fee2e2; color: #ef4444; border: none; border-radius: 4px; font-weight: 600;">
+                    <i class="fas fa-trash"></i> Delete Node
                 </button>
             </div>
+        </div>
+        
+        <div id="sidebar-placeholder" style="text-align: center; color: #999; margin-top: 50px;">
+            Select a node to edit properties.
+        </div>
+    </div>
 
-            <div style="background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: 30px;">
-                <div id="steps-container">
-                    <!-- Steps will be rendered here by JS -->
-                </div>
-
-                <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px dashed #eee;">
-                    <button id="addStepBtn" style="background: white; border: 2px dashed var(--primary); color: var(--primary); padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600;">
-                        <i class="fas fa-plus"></i> Add New Step
-                    </button>
-                </div>
-            </div>
+    <!-- Canvas -->
+    <div id="canvas-wrapper">
+        <div id="canvas-content">
+            <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg">
+                <!-- Connector lines -->
+            </svg>
+            <!-- Nodes -->
         </div>
     </div>
 </div>
 
-<!-- Template for a single step card -->
-<template id="step-template">
-    <div class="step-card" style="background: #f9fafb; border: 1px solid #eee; border-radius: var(--radius-sm); padding: 20px; margin-bottom: 15px; position: relative;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-            <span class="step-badge" style="background: var(--secondary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">STEP <span class="step-index">1</span></span>
-            <button class="delete-step-btn" style="background: none; border: none; color: var(--danger); cursor: pointer;"><i class="fas fa-trash"></i></button>
-        </div>
-
-        <div class="row" style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px;">Question / Prompt</label>
-                <input type="text" class="step-question" placeholder="e.g. What type of haircut do you want?" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-            </div>
-            
-            <div style="width: 200px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px;">Response Type</label>
-                <select class="step-type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                    <option value="multiple_choice">Multiple Choice</option>
-                    <option value="text">Free Text</option>
-                    <option value="number">Number</option>
-                    <option value="file">File Upload</option>
-                    <option value="yes_no">Yes / No</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Options Section (Only for multiple_choice) -->
-        <div class="options-section" style="margin-top: 15px; display: none;">
-            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px;">Choices & Logic</label>
-            <div class="options-list" style="margin-bottom: 10px;">
-                <!-- Option rows injected here -->
-            </div>
-            <button class="add-option-btn" style="font-size: 12px; padding: 5px 10px; background: #eee; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
-                <i class="fas fa-plus"></i> Add Option
-            </button>
-        </div>
-
-        <div class="settings-row" style="margin-top: 15px; display: flex; gap: 20px; align-items: center;">
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 5px;">
-                <input type="checkbox" class="step-required" checked> Required
-            </label>
-
-            <!-- Logic for Yes/No Loop -->
-            <div class="loop-logic" style="display: none; align-items: center; gap: 10px;">
-                <label style="font-size: 13px;">If 'Yes', go to Step:</label>
-                <select class="step-loop-target" style="padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                    <!-- Populated dynamically -->
-                </select>
-            </div>
-        </div>
-    </div>
-</template>
-
 <script>
-    // Initial script data from server
-    let scriptData = <%- JSON.stringify(script.steps || []) %>;
     const businessId = "<%= business._id %>";
 
-    const container = document.getElementById('steps-container');
-    const template = document.getElementById('step-template');
-    const addBtn = document.getElementById('addStepBtn');
-    const saveBtn = document.getElementById('saveBtn');
+    // --- State Management ---
+    const state = {
+        nodes: [], // { data: {...}, el: DOMElement }
+        connections: [], // { fromNodeId, fromOptionIdx, toNodeId, lineEl }
+        scale: 1,
+        pan: { x: 0, y: 0 },
+        isPanning: false,
+        lastMouse: { x: 0, y: 0 },
+        selectedNodeId: null,
+        
+        // Dragging Connection State
+        isConnecting: false,
+        connectStart: { x: 0, y: 0, nodeId: null, optionIdx: null }, // optionIdx -1 for main output
+        tempLine: null
+    };
 
-    // Render initial steps
-    function render() {
-        container.innerHTML = '';
-        if(scriptData.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#999; font-style:italic;">No steps added yet. Click "Add New Step" to begin.</p>';
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    const canvasContent = document.getElementById('canvas-content');
+    const svgLayer = document.getElementById('svg-layer');
+
+    // --- Helper: Create SVG Line ---
+    function createLine(x1, y1, x2, y2) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        line.setAttribute('class', 'connection-line');
+        updateLinePath(line, x1, y1, x2, y2);
+        return line;
+    }
+
+    function updateLinePath(line, x1, y1, x2, y2) {
+        // Bezier Curve for smooth connection
+        const dist = Math.abs(x2 - x1) * 0.5;
+        const cp1x = x1 + dist; // Control point 1
+        const cp1y = y1; 
+        const cp2x = x2 - dist; // Control point 2
+        const cp2y = y2;
+        
+        // If straight line preferred: `M ${x1} ${y1} L ${x2} ${y2}`
+        const d = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+        line.setAttribute('d', d);
+    }
+
+    // --- Node Management ---
+
+    function createNode(x, y, data = null) {
+        const id = data ? data.id : `node_${Date.now()}`;
+        const isStart = data && data.type === 'start';
+        
+        const nodeData = data || {
+            id: id,
+            x: x,
+            y: y,
+            question: 'New Question',
+            type: 'text',
+            options: []
+        };
+
+        const el = document.createElement('div');
+        el.className = `node ${isStart ? 'start-node' : ''}`;
+        el.id = id;
+        el.style.left = `${nodeData.x}px`;
+        el.style.top = `${nodeData.y}px`;
+        
+        // Input Handle (Top) - Start Node doesn't have input
+        const inputHandle = !isStart ? `<div class="handle input-handle" data-node="${id}"></div>` : '';
+
+        el.innerHTML = `
+            ${inputHandle}
+            <div class="node-header">
+                <span class="node-title">${isStart ? 'Start' : 'Question'}</span>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span class="badge badge-secondary node-type-badge" style="font-size: 10px;">${nodeData.type}</span>
+                    ${!isStart ? '<i class="fas fa-trash node-delete-icon" style="font-size:10px; color:#999; cursor:pointer;"></i>' : ''}
+                </div>
+            </div>
+            <div class="node-body">
+                <p class="node-question-preview" style="font-size: 13px; color: #555; margin: 0;">${nodeData.question}</p>
+                <div class="node-options-container" style="margin-top: 10px;"></div>
+                
+                <!-- Default Output Handle (Right) for non-branching types -->
+                <div class="handle output-handle default-output" data-node="${id}" data-option="-1" style="display:none;"></div>
+            </div>
+        `;
+
+        // Make Draggable
+        makeDraggable(el, nodeData);
+
+        // Selectable
+        el.addEventListener('mousedown', (e) => {
+            // Don't select if clicking handle or delete icon
+            if(e.target.classList.contains('handle') || e.target.classList.contains('node-delete-icon')) return;
+            e.stopPropagation();
+            selectNode(nodeData);
+        });
+
+        // Quick Delete
+        const delIcon = el.querySelector('.node-delete-icon');
+        if(delIcon) {
+            delIcon.addEventListener('mousedown', (e) => {
+                e.stopPropagation(); // Prevent drag start
+                if(confirm('Delete this node?')) {
+                    deleteNode(id);
+                }
+            });
+        }
+
+        canvasContent.appendChild(el);
+        state.nodes.push({ data: nodeData, el: el });
+        
+        updateNodeVisuals(nodeData);
+        
+        // Handle Events
+        setupHandleEvents(el, nodeData);
+
+        return nodeData;
+    }
+
+    function updateNodeVisuals(nodeData) {
+        const el = document.getElementById(nodeData.id);
+        if(!el) return;
+
+        if(nodeData.type !== 'start') {
+            el.querySelector('.node-question-preview').textContent = nodeData.question || '(No text)';
+            el.querySelector('.node-type-badge').textContent = nodeData.type;
+        } else {
+            el.querySelector('.node-question-preview').textContent = 'Entry point of the script';
+        }
+
+        const optContainer = el.querySelector('.node-options-container');
+        const defaultOutput = el.querySelector('.default-output');
+        optContainer.innerHTML = '';
+
+        // Branching Logic:
+        // Multiple Choice / YesNo -> Handles per option
+        // Others (Text, Number, etc.) -> Single default handle
+        
+        if (['multiple_choice', 'yes_no'].includes(nodeData.type)) {
+            defaultOutput.style.display = 'none';
+            
+            (nodeData.options || []).forEach((opt, idx) => {
+                const row = document.createElement('div');
+                row.style.position = 'relative';
+                row.style.padding = '5px';
+                row.style.marginBottom = '5px';
+                row.style.background = '#f9fafb';
+                row.style.fontSize = '12px';
+                row.style.border = '1px solid #eee';
+                row.textContent = opt.label;
+
+                // Option Output Handle
+                const handle = document.createElement('div');
+                handle.className = 'handle output-handle';
+                handle.setAttribute('data-node', nodeData.id);
+                handle.setAttribute('data-option', idx);
+                handle.style.right = '-17px'; // Position outside relative row
+                
+                row.appendChild(handle);
+                optContainer.appendChild(row);
+            });
+        } else {
+            // Single output flow
+            defaultOutput.style.display = 'block';
+        }
+        
+        // Re-bind handle events for new handles
+        setupHandleEvents(el, nodeData);
+        updateConnections(); // Redraw lines
+    }
+
+    // --- Dragging Logic (Nodes) ---
+    function makeDraggable(el, nodeData) {
+        const header = el.querySelector('.node-header');
+        let isDragging = false;
+        let startPos = { x: 0, y: 0 };
+
+        header.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startPos = { x: e.clientX, y: e.clientY };
+            e.stopPropagation();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const dx = (e.clientX - startPos.x) / state.scale;
+            const dy = (e.clientY - startPos.y) / state.scale;
+            nodeData.x += dx;
+            nodeData.y += dy;
+            el.style.left = `${nodeData.x}px`;
+            el.style.top = `${nodeData.y}px`;
+            startPos = { x: e.clientX, y: e.clientY };
+            
+            updateConnections(); // Move lines with node
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; });
+    }
+
+    // --- Connection Logic (Handles) ---
+
+    function setupHandleEvents(nodeEl, nodeData) {
+        const outputs = nodeEl.querySelectorAll('.output-handle');
+        const inputs = nodeEl.querySelectorAll('.input-handle');
+
+        // Start Dragging Connection
+        outputs.forEach(handle => {
+            // Avoid double binding
+            if(handle.dataset.bound) return; 
+            handle.dataset.bound = true;
+
+            handle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault(); // Prevent text selection
+                
+                const rect = handle.getBoundingClientRect();
+                // Calculate canvas-relative coordinates
+                // canvasContent transform affects getBoundingClientRect
+                // We need the center of the handle relative to canvasContent
+                
+                const contentRect = canvasContent.getBoundingClientRect();
+                const startX = (rect.left + rect.width/2 - contentRect.left) / state.scale;
+                const startY = (rect.top + rect.height/2 - contentRect.top) / state.scale;
+
+                state.isConnecting = true;
+                state.connectStart = { 
+                    x: startX, 
+                    y: startY, 
+                    nodeId: handle.dataset.node, 
+                    optionIdx: parseInt(handle.dataset.option) 
+                };
+
+                // Create temp line
+                state.tempLine = createLine(startX, startY, startX, startY);
+                state.tempLine.style.strokeDasharray = "5,5"; // Dashed for temp
+                svgLayer.appendChild(state.tempLine);
+            });
+        });
+
+        // End Connection (Drop on Input)
+        inputs.forEach(handle => {
+            if(handle.dataset.bound) return;
+            handle.dataset.bound = true;
+
+            handle.addEventListener('mouseup', (e) => {
+                if (state.isConnecting) {
+                    e.stopPropagation();
+                    const targetNodeId = handle.dataset.node;
+
+                    // Validate: No self-loop
+                    if (state.connectStart.nodeId === targetNodeId) return;
+
+                    // Create Connection
+                    createConnection(
+                        state.connectStart.nodeId, 
+                        state.connectStart.optionIdx, 
+                        targetNodeId
+                    );
+                }
+            });
+            
+            // Highlight on hover when connecting
+            handle.addEventListener('mouseenter', () => {
+                if(state.isConnecting) handle.style.transform = 'scale(1.5)';
+            });
+            handle.addEventListener('mouseleave', () => {
+                handle.style.transform = 'scale(1)';
+            });
+        });
+    }
+
+    // Global Mouse Move for Dragging Line
+    window.addEventListener('mousemove', (e) => {
+        if (state.isConnecting && state.tempLine) {
+            const contentRect = canvasContent.getBoundingClientRect();
+            const curX = (e.clientX - contentRect.left) / state.scale;
+            const curY = (e.clientY - contentRect.top) / state.scale;
+            
+            updateLinePath(state.tempLine, state.connectStart.x, state.connectStart.y, curX, curY);
+        }
+    });
+
+    // Global Mouse Up to Cancel Connection
+    window.addEventListener('mouseup', (e) => {
+        if (state.isConnecting) {
+            state.isConnecting = false;
+            if (state.tempLine) {
+                state.tempLine.remove();
+                state.tempLine = null;
+            }
+        }
+    });
+
+    function createConnection(fromId, optionIdx, toId) {
+        // Remove existing connection from this specific output handle (One-to-One)
+        state.connections = state.connections.filter(c => 
+            !(c.fromNodeId === fromId && c.fromOptionIdx === optionIdx)
+        );
+        
+        const conn = { fromNodeId: fromId, fromOptionIdx: optionIdx, toNodeId: toId };
+        state.connections.push(conn);
+        
+        drawConnection(conn);
+    }
+
+    function drawConnection(conn) {
+        // Calculate positions
+        // Need to find the DOM elements for handles
+        const fromNode = document.getElementById(conn.fromNodeId);
+        const toNode = document.getElementById(conn.toNodeId);
+        if (!fromNode || !toNode) return;
+
+        // Find specific output handle
+        let outputHandle = fromNode.querySelector(`.output-handle[data-option="${conn.fromOptionIdx}"]`);
+        // If option handle missing (e.g. options changed), try default? No, just fail gracefully or use node center
+        if (!outputHandle && conn.fromOptionIdx === -1) {
+             outputHandle = fromNode.querySelector(`.default-output`);
+        }
+
+        const inputHandle = toNode.querySelector('.input-handle');
+
+        if (!outputHandle || !inputHandle) return;
+
+        // Get coords relative to canvasContent
+        // We can calculate offsetLeft/Top recursively, or use getBoundingClientRect logic again
+        
+        const getCenter = (el) => {
+            const contentRect = canvasContent.getBoundingClientRect();
+            const rect = el.getBoundingClientRect();
+            return {
+                x: (rect.left + rect.width/2 - contentRect.left) / state.scale,
+                y: (rect.top + rect.height/2 - contentRect.top) / state.scale
+            };
+        };
+
+        const p1 = getCenter(outputHandle);
+        const p2 = getCenter(inputHandle);
+
+        // Check if line already exists in DOM (update it) or create new
+        // We can store ref in conn object
+        if(conn.lineEl && document.contains(conn.lineEl)) {
+            updateLinePath(conn.lineEl, p1.x, p1.y, p2.x, p2.y);
+        } else {
+            conn.lineEl = createLine(p1.x, p1.y, p2.x, p2.y);
+            conn.lineEl.addEventListener('click', (e) => {
+                if(confirm('Delete connection?')) {
+                    conn.lineEl.remove();
+                    state.connections = state.connections.filter(c => c !== conn);
+                }
+            });
+            svgLayer.appendChild(conn.lineEl);
+        }
+    }
+
+    function updateConnections() {
+        state.connections.forEach(drawConnection);
+    }
+
+    // --- Toolbar & Sidebar (Existing Code Refined) ---
+
+    // ... (Existing Toolbar & Sidebar code from 4.1, preserved below) ...
+    // Panning logic
+    canvasWrapper.addEventListener('mousedown', (e) => {
+        if (e.target === canvasWrapper || e.target === canvasContent || e.target.id === 'svg-layer') {
+            state.isPanning = true;
+            state.lastMouse = { x: e.clientX, y: e.clientY };
+            canvasWrapper.style.cursor = 'grabbing';
+        }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (state.isPanning) {
+            const dx = e.clientX - state.lastMouse.x;
+            const dy = e.clientY - state.lastMouse.y;
+            state.pan.x += dx;
+            state.pan.y += dy;
+            canvasContent.style.transform = `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.scale})`;
+            state.lastMouse = { x: e.clientX, y: e.clientY };
+        }
+    });
+    
+    window.addEventListener('mouseup', () => { 
+        if(state.isPanning) {
+            state.isPanning = false; 
+            canvasWrapper.style.cursor = 'grab';
+        }
+    });
+
+    document.getElementById('zoomInBtn').addEventListener('click', () => { state.scale += 0.1; canvasContent.style.transform = `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.scale})`; });
+    document.getElementById('zoomOutBtn').addEventListener('click', () => { state.scale = Math.max(0.1, state.scale - 0.1); canvasContent.style.transform = `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.scale})`; });
+    
+    document.getElementById('addNodeBtn').addEventListener('click', () => {
+        const wrapperRect = canvasWrapper.getBoundingClientRect();
+        const centerX = (wrapperRect.width / 2 - state.pan.x) / state.scale;
+        const centerY = (wrapperRect.height / 2 - state.pan.y) / state.scale;
+        const newNode = createNode(centerX - 125, centerY - 50);
+        selectNode(newNode);
+    });
+
+    // Sidebar Props
+    const sidebar = document.getElementById('properties-sidebar');
+    const propQuestion = document.getElementById('prop-question');
+    const propType = document.getElementById('prop-type');
+    const propAddOption = document.getElementById('prop-add-option');
+    const deleteNodeBtn = document.getElementById('deleteNodeBtn');
+
+    function selectNode(nodeData) {
+        if(nodeData.type === 'start') return; // Start node not editable
+
+        state.selectedNodeId = nodeData.id;
+        document.querySelectorAll('.node').forEach(n => n.classList.remove('node-selected'));
+        document.getElementById(nodeData.id).classList.add('node-selected');
+        
+        sidebar.classList.add('open');
+        document.getElementById('sidebar-content').style.display = 'block';
+        document.getElementById('sidebar-placeholder').style.display = 'none';
+
+        propQuestion.value = nodeData.question;
+        propType.value = nodeData.type;
+        renderSidebarOptions(nodeData);
+    }
+
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+        sidebar.classList.remove('open');
+    });
+
+    propQuestion.addEventListener('input', (e) => {
+        const node = state.nodes.find(n => n.data.id === state.selectedNodeId);
+        if(node) { node.data.question = e.target.value; updateNodeVisuals(node.data); }
+    });
+
+    propType.addEventListener('change', (e) => {
+        const node = state.nodes.find(n => n.data.id === state.selectedNodeId);
+        if(node) { node.data.type = e.target.value; updateNodeVisuals(node.data); }
+    });
+    
+    propAddOption.addEventListener('click', () => {
+        const node = state.nodes.find(n => n.data.id === state.selectedNodeId);
+        if(node) {
+            if(!node.data.options) node.data.options = [];
+            node.data.options.push({ label: 'New Option' });
+            renderSidebarOptions(node.data);
+            updateNodeVisuals(node.data);
+        }
+    });
+
+    deleteNodeBtn.addEventListener('click', () => {
+        if(confirm('Delete this node?')) {
+            deleteNode(state.selectedNodeId);
+        }
+    });
+
+    function deleteNode(nodeId) {
+        const idx = state.nodes.findIndex(n => n.data.id === nodeId);
+        if(idx > -1) {
+            const node = state.nodes[idx];
+            node.el.remove();
+            state.nodes.splice(idx, 1);
+            
+            // Remove connections
+            state.connections = state.connections.filter(c => {
+                if(c.fromNodeId === nodeId || c.toNodeId === nodeId) {
+                    if(c.lineEl) c.lineEl.remove();
+                    return false;
+                }
+                return true;
+            });
+            
+            if(state.selectedNodeId === nodeId) {
+                sidebar.classList.remove('open');
+                state.selectedNodeId = null;
+            }
+        }
+    }
+
+    function renderSidebarOptions(nodeData) {
+        const container = document.getElementById('prop-options-container');
+        const list = document.getElementById('prop-options-list');
+        
+        if(['multiple_choice', 'yes_no'].includes(nodeData.type)) {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
             return;
         }
 
-        scriptData.forEach((step, index) => {
-            const clone = template.content.cloneNode(true);
-            const card = clone.querySelector('.step-card');
-            
-            // Fill data
-            card.querySelector('.step-index').textContent = index + 1;
-            card.querySelector('.step-question').value = step.question || '';
-            card.querySelector('.step-type').value = step.type || 'text';
-            card.querySelector('.step-required').checked = step.required !== false;
-            
-            if(step.options && step.options.length > 0) {
-                card.querySelector('.step-options').value = step.options.map(o => o.label || o).join(', ');
-            }
-
-            // Handle Type Change
-            const typeSelect = card.querySelector('.step-type');
-            const optionsSection = card.querySelector('.options-section');
-            const loopLogic = card.querySelector('.loop-logic');
-
-            function updateVisibility() {
-                const val = typeSelect.value;
-                if(val === 'multiple_choice') {
-                    optionsSection.style.display = 'block';
-                } else {
-                    optionsSection.style.display = 'none';
-                }
-
-                if(val === 'yes_no') {
-                    loopLogic.style.display = 'flex';
-                    populateLoopTargets(card.querySelector('.step-loop-target'), index);
-                } else {
-                    loopLogic.style.display = 'none';
-                }
-            }
-
-            typeSelect.addEventListener('change', updateVisibility);
-            updateVisibility(); // Run once on load
-
-            // Set loop target if exists
-            if(step.loopTo) {
-                setTimeout(() => {
-                    card.querySelector('.step-loop-target').value = step.loopTo;
-                }, 0);
-            }
-
-            // Delete Event
-            card.querySelector('.delete-step-btn').addEventListener('click', () => {
-                scriptData.splice(index, 1);
-                render();
-            });
-
-            // Update Data on Input
-            const inputs = card.querySelectorAll('input, select');
-            inputs.forEach(input => {
-                input.addEventListener('change', () => {
-                    updateStepData(index, card);
-                });
-                input.addEventListener('keyup', () => {
-                     updateStepData(index, card);
-                });
-            });
-
-            container.appendChild(card);
+        list.innerHTML = '';
+        (nodeData.options || []).forEach((opt, idx) => {
+            const row = document.createElement('div');
+            row.innerHTML = `
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <input type="text" class="form-control form-control-sm" value="${opt.label}" oninput="updateOptionLabel('${nodeData.id}', ${idx}, this.value)">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteOption('${nodeData.id}', ${idx})">&times;</button>
+                </div>`;
+            list.appendChild(row);
         });
     }
 
-    function populateLoopTargets(select, currentIndex) {
-        select.innerHTML = '<option value="">(Finish Script)</option>';
-        scriptData.forEach((s, i) => {
-            // Can loop back to any previous step or current step (though looping to self is weird without logic)
-            // Usually loops go back.
-            const stepId = `step_${i + 1}`;
-            select.innerHTML += `<option value="${stepId}">Step ${i + 1}</option>`;
-        });
-    }
-
-    function updateStepData(index, card) {
-        const step = scriptData[index];
-        step.question = card.querySelector('.step-question').value;
-        step.type = card.querySelector('.step-type').value;
-        step.required = card.querySelector('.step-required').checked;
-        
-        if(step.type === 'multiple_choice') {
-            const raw = card.querySelector('.step-options').value;
-            step.options = raw.split(',').map(s => s.trim()).filter(s => s).map(s => ({ label: s }));
-        } else {
-            step.options = [];
+    // Helpers accessible from HTML on* attributes
+    window.updateOptionLabel = (nodeId, idx, val) => {
+        const node = state.nodes.find(n => n.data.id === nodeId);
+        if(node && node.data.options[idx]) {
+            node.data.options[idx].label = val;
+            updateNodeVisuals(node.data);
         }
-
-        if(step.type === 'yes_no') {
-            step.loopTo = card.querySelector('.step-loop-target').value || null;
-        } else {
-            step.loopTo = null;
+    };
+    window.deleteOption = (nodeId, idx) => {
+        const node = state.nodes.find(n => n.data.id === nodeId);
+        if(node) {
+            node.data.options.splice(idx, 1);
+            renderSidebarOptions(node.data);
+            updateNodeVisuals(node.data);
         }
+    };
 
-        // Ensure stepId is set
-        step.stepId = `step_${index + 1}`;
-        
-        // Simple sequential nextStep
-        if (index < scriptData.length - 1) {
-            step.nextStepId = `step_${index + 2}`;
-        } else {
-            step.nextStepId = null;
-        }
-    }
-
-    addBtn.addEventListener('click', () => {
-        scriptData.push({
-            stepId: `step_${scriptData.length + 1}`,
-            type: 'text',
-            question: '',
-            required: true,
-            options: []
-        });
-        render();
-    });
-
-    saveBtn.addEventListener('click', async () => {
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        saveBtn.disabled = true;
+    // --- Save Functionality ---
+    document.getElementById('saveScriptBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveScriptBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        btn.disabled = true;
 
         try {
-            // Re-process stepIds to ensure they are sequential before saving
-            scriptData = scriptData.map((s, i) => ({
-                ...s,
-                stepId: `step_${i + 1}`,
-                nextStepId: (i < scriptData.length - 1) ? `step_${i + 2}` : null
-            }));
+            // 1. Prepare Visual Layout Data
+            const visualLayout = {
+                nodes: state.nodes.map(n => n.data),
+                connections: state.connections.map(c => ({
+                    fromNodeId: c.fromNodeId,
+                    fromOptionIdx: c.fromOptionIdx,
+                    toNodeId: c.toNodeId
+                }))
+            };
+
+            // 2. Convert to Logical Steps for Chat Bot
+            // We map visual nodes to the DB 'Step' format.
+            // Filter out the 'Start' node, it's just a visual anchor.
+            const validNodes = state.nodes.filter(n => n.data.type !== 'start');
+            
+            const steps = validNodes.map(nodeWrapper => {
+                const n = nodeWrapper.data;
+                
+                // Find connections originating from this node
+                const outgoingConns = state.connections.filter(c => c.fromNodeId === n.id);
+                
+                // Map options and their targets
+                const mappedOptions = (n.options || []).map((opt, idx) => {
+                    const conn = outgoingConns.find(c => c.fromOptionIdx === idx);
+                    return {
+                        label: opt.label,
+                        nextStepId: conn ? conn.toNodeId : null
+                    };
+                });
+
+                // Find default target (non-branching types)
+                const defaultConn = outgoingConns.find(c => c.fromOptionIdx === -1);
+                const defaultNextId = defaultConn ? defaultConn.toNodeId : null;
+
+                return {
+                    stepId: n.id,
+                    type: n.type,
+                    question: n.question,
+                    required: true,
+                    options: mappedOptions,
+                    nextStepId: defaultNextId
+                };
+            });
+
+            // Determine First Step (Connected from Start)
+            const startConn = state.connections.find(c => c.fromNodeId === 'start');
+            if(startConn) {
+                const startNodeIndex = steps.findIndex(s => s.stepId === startConn.toNodeId);
+                if(startNodeIndex > -1) {
+                    const [first] = steps.splice(startNodeIndex, 1);
+                    steps.unshift(first);
+                }
+            }
+
+            // 3. Send to Backend
+            const payload = {
+                steps,
+                visualLayout
+            };
 
             const res = await fetch(`/sme/business/${businessId}/script`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ steps: scriptData })
+                body: JSON.stringify(payload)
             });
             
             const result = await res.json();
-            
+
             if(result.success) {
-                // Show toast or alert
-                saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
                 setTimeout(() => {
-                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Script';
-                    saveBtn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save"></i> Save';
+                    btn.disabled = false;
                 }, 2000);
             } else {
-                alert('Error saving script');
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Script';
-                saveBtn.disabled = false;
+                alert('Error saving: ' + (result.error || 'Unknown'));
+                btn.innerHTML = '<i class="fas fa-save"></i> Save';
+                btn.disabled = false;
             }
+
         } catch(e) {
             console.error(e);
             alert('Network error');
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Script';
-            saveBtn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Save';
+            btn.disabled = false;
         }
     });
 
-    // Init
-    render();
+
+    // --- Initialization ---
+
+    const scriptData = <%- JSON.stringify(script) %>;
+
+    // Create Start Node (Fixed)
+    createNode(50, 250, { id: 'start', type: 'start', question: 'Start', options: [] });
+
+    if (scriptData.visualLayout && scriptData.visualLayout.nodes && scriptData.visualLayout.nodes.length > 0) {
+        // Load from Visual Layout
+        scriptData.visualLayout.nodes.forEach(nData => {
+            if(nData.id === 'start') return; // Skip start, we made it
+            createNode(nData.x, nData.y, nData);
+        });
+
+        // Load Connections
+        if(scriptData.visualLayout.connections) {
+            // We need to wait for DOM elements to be created before drawing lines?
+            // Actually createConnection works if nodes exist.
+            scriptData.visualLayout.connections.forEach(c => {
+                // Validate nodes exist
+                const fromExists = c.fromNodeId === 'start' || state.nodes.find(n => n.data.id === c.fromNodeId);
+                const toExists = state.nodes.find(n => n.data.id === c.toNodeId);
+                
+                if(fromExists && toExists) {
+                    createConnection(c.fromNodeId, c.fromOptionIdx, c.toNodeId);
+                }
+            });
+        }
+
+    } else if (scriptData.steps && scriptData.steps.length > 0) {
+        // Legacy Import
+        let x = 350, y = 100;
+        scriptData.steps.forEach((step, i) => {
+            const node = createNode(x, y, {
+                id: step.stepId || `step_${i}`,
+                x: x, 
+                y: y,
+                question: step.question,
+                type: step.type,
+                options: step.options || []
+            });
+            
+            // Legacy Connections
+            if(step.type === 'multiple_choice' || step.type === 'yes_no') {
+                (step.options || []).forEach((opt, optIdx) => {
+                    if(opt.nextStepId) {
+                        createConnection(node.id, optIdx, opt.nextStepId);
+                    }
+                });
+            } else {
+                 if(step.nextStepId) {
+                     createConnection(node.id, -1, step.nextStepId);
+                 }
+            }
+            
+            // Connect Start to first step
+            if(i === 0) {
+                createConnection('start', -1, node.id);
+            }
+
+            x += 350;
+            if(i % 3 === 2) { x = 350; y += 300; }
+        });
+    }
+
 
 </script>
 

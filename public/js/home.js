@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- Toast Notification for "Add to Cart" ---
-    const actionBtns = document.querySelectorAll('.action-btn, .search-button, .slide-btn');
+    const actionBtns = document.querySelectorAll('.action-btn, .slide-btn');
     
     actionBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {

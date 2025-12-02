@@ -1,78 +1,220 @@
-### **Project: Dynamic, Branching Questionnaire System for SME Services**
 
-**Overall Goal:** Build a system where an SME owner can create a dynamic service script with branching logic, which customers then use in a chat-like interface to place requests with specific operators.
+# **Phase 4: Upgrade to Visual Script Builder**
 
----
-
-### **Phase 1: Core Data Structure & Basic Flow**
-*Objective: Establish the fundamental database structure and a simple, linear questionnaire.*
-
-**Task 1.1: Define Core Data Models**
-*   Create a data model for an `SME` (business) with basic info (name, description).
-*   Create a data model for an `Operator` (service staff) linked to an `SME`.
-*   Create a data model for a `ServiceScript` linked to an `SME`. This script will contain multiple `Questions`.
-
-**Task 1.2: Build the Basic Question Model**
-*   Create a data model for a `Question`. It should have:
-    *   `question_text` (e.g., "What service would you like?")
-    *   `input_type` (e.g., `multiple_choice`, `number`, `text`, `file`).
-    *   A link back to its `ServiceScript`.
-
-**Task 1.3: Create a Simple Script Builder UI**
-*   Build a simple interface for the SME owner where they can:
-    *   Create a new `ServiceScript` for their SME.
-    *   Add new `Questions` to the script in a sequence.
-    *   For each question, define the `question_text` and `input_type`.
-
-**Task 1.4: Implement a Linear Customer Flow**
-*   Create a customer-facing page that, after selecting an operator, displays the SME's `ServiceScript`.
-*   It should render each `Question` in the order they were created, one after another, using the appropriate input field (buttons for `multiple_choice`, a number box for `number`, etc.).
-*   The flow ends with a "Submit Request" button that places the request in the operator's queue.
+**Goal:** Replace the current form-based script builder with an intuitive **visual, node-based editor**.
 
 ---
 
-### **Phase 2: Implementing Branching Logic**
-*Objective: Upgrade the system from a linear flow to a dynamic, branching one.*
+## **Phase 4.1 — Foundation: Canvas and Static Nodes**
 
-**Task 2.1: Enhance the Question Model for Branching**
-*   Add a new data model for `AnswerOption` linked to a parent `Question`.
-    *   It should have `option_text` (e.g., "Printing", "Registration").
-*   Modify the `Question` model to have a field called `next_question`. This field should link to the next `Question` that should be shown.
-*   **Crucially, link the `next_question` to the `AnswerOption`**, not the parent `Question`. This allows each answer to lead to a different path.
-
-**Task 2.2: Upgrade the Script Builder UI for Branching**
-*   In the script builder, when an SME owner creates a `multiple_choice` question, provide an interface to:
-    1.  Add the possible `AnswerOption`s (e.g., "Printing", "Registration").
-    2.  For each `AnswerOption`, allow the owner to select or create the *next* `Question` in the flow.
-*   This is how the "if-else" logic is created: *If* the user selects "Printing", *then* show the "What type of printing?" question.
-
-**Task 2.3: Implement the Dynamic Customer Flow**
-*   Rewrite the customer-facing flow logic. It should no longer simply show all questions in sequence.
-*   The new logic should be:
-    1.  Start with the first question of the script.
-    2.  When a customer selects an `AnswerOption`, the system looks up the `next_question` linked to that specific option.
-    3.  It then dynamically loads and displays that next question.
-    4.  This repeats until a question has no `next_question` defined, at which point the request can be submitted.
+### **Objective:** Build the visual workspace and basic node system
 
 ---
 
-### **Phase 3: Polishing the User Experience & Complex Inputs**
-*Objective: Refine the system to handle complex data and improve usability.*
+### **4.1.1 — Implement Main Canvas Component**
 
-**Task 3.1: Implement File Upload Handling**
-*   Ensure the system can properly handle `input_type: file`. This includes frontend upload components and backend processing to store the uploaded files securely, associating them with the customer's request.
+* Create a large central `<div>` that serves as the main building canvas.
+* Implement essential canvas features:
 
-**Task 3.2: Add Logic for "Add Another Item" (Yes/No Loops)**
-*   Implement a special case for `confirmation` (Yes/No) questions.
-*   For example, if the question is "Anything else?" and the `AnswerOption` for "Yes" is selected, the logic should loop back to a previous question (e.g., the first service question). The `next_question` for "Yes" would point to that earlier question ID.
-
-**Task 3.3: Review and Summary Step**
-*   Before final submission, add a step that summarizes the customer's entire journey—all their selected options and inputs—for them to review and confirm.
-
-**Task 3.4: UI/UX Polish**
-*   Improve the chat interface with better styling, timestamps, or user/bot avatars to make it feel more like a real conversation.
-*   Add validation to questions (e.g., a number input must be greater than zero).
+  * Zoom in / zoom out
+  * Panning (click + drag to move viewport)
 
 ---
 
-By following these phases and tasks in order, the agent can focus on one well-defined problem at a time, reducing complexity and ensuring a solid foundation for each new feature.
+### **4.1.2 — Design the `QuestionNode` Component**
+
+A reusable draggable component that visually displays:
+
+* **Header:** `question_text`
+* **Badge:** `input_type` (e.g., Multiple Choice)
+* **List:** `answer_options` (e.g., “Printing”, “Registration”)
+
+Node must be:
+
+* **Draggable**
+* **Selectable** (to open properties sidebar)
+
+---
+
+### **4.1.3 — Add “Add New Node” Toolbar**
+
+Create a toolbar with a button:
+
+* **Add Question**
+
+When clicked:
+
+* Create a new blank `QuestionNode`
+* Place it in the **center** of the visible canvas
+
+---
+
+### **4.1.4 — Create “Node Properties” Sidebar**
+
+A sidebar that appears when a node is selected.
+
+Form fields:
+
+* Input field for `question_text`
+* Dropdown selector for `input_type`
+* List editor for `answer_options` (add / remove)
+
+---
+
+## **Phase 4.2 — Logic: Connecting Nodes Visually**
+
+### **Objective:** Make nodes connect with actual logic represented through visual links
+
+---
+
+### **4.2.1 — Add Connection Handles**
+
+Modify `QuestionNode` to include:
+
+* **Output handles**
+
+  * One handle **per answer option**
+* **Input handle**
+
+  * A single handle at the top of the node
+
+Handles visually represent connection points.
+
+---
+
+### **4.2.2 — Implement `ConnectorLine` Component**
+
+* Create an SVG line/arrow component
+* Can draw smooth, curved, or straight lines
+* Positioned between two handles on the canvas
+
+---
+
+### **4.2.3 — Enable Drag-to-Connect**
+
+* Output handles become **draggable**
+* If user drags from an output handle → releases over an input handle:
+
+  * A permanent `ConnectorLine` is created
+  * The logic is saved to DB:
+
+Example:
+
+```json
+{
+  "answer_option": "Printing",
+  "next_question_id": "question_2"
+}
+```
+
+---
+
+### **4.2.4 — Define the Start Node**
+
+Create a special **`StartNode`**:
+
+* Cannot be deleted
+* Has a single output handle
+* Connecting it to a node defines the **first question** in the script
+
+---
+
+## **Phase 4.3 — Data Management & Integrity**
+
+### **Objective:** Ensure full saving, loading, and validation of script layout
+
+---
+
+### **4.3.1 — Create Visual Layout Data Structure**
+
+Define structure:
+
+```json
+{
+  "nodes": [
+    { "nodeId": "...", "x": 100, "y": 200 }
+  ],
+  "connections": [
+    { 
+      "fromNode": "...",
+      "answerIndex": 0,
+      "toNode": "..."
+    }
+  ]
+}
+```
+
+Must store:
+
+* Node coordinates
+* All connections
+* Answer-to-next question mappings
+
+---
+
+### **4.3.2 — Save & Load Full Visual Script**
+
+**Save Script** button must:
+
+* Capture full layout
+* Capture node connections
+* Update backend with entire structure
+
+**Loading Script**:
+
+* Canvas pre-populates with nodes at saved positions
+* Recreates all `ConnectorLines`
+
+---
+
+### **4.3.3 — Add Connection Validation**
+
+Prevent invalid links:
+
+* No node should connect to **itself**
+* Only **one connection per answer option**
+* No circular dependency unless explicitly allowed
+* Input handle accepts only *one* incoming connection except StartNode
+
+---
+
+## **Phase 4.4 — User Experience (UX) Polish**
+
+### **Objective:** Improve usability, clarity, and smoothness
+
+---
+
+### **4.4.1 — Implement Node Deletion**
+
+* Add trash icon to each node
+* Ask for confirmation before deleting
+* When deleted:
+
+  * Remove the node
+  * Remove all linked connections
+
+---
+
+### **4.4.2 — Add Visual Feedback**
+
+Provide UX feedback:
+
+* Highlight selected node
+* Highlight input handle when a connection is dragged over it
+* Change cursor to:
+
+  * `grab` when hovering
+  * `grabbing` when dragging nodes or connectors
+
+---
+
+### **4.4.3 — Auto-Layout & Snapping (Optional Enhancements)**
+
+* **Auto-arrange** button:
+
+  * Automatically positions nodes to reduce overlapping lines
+* **Grid snapping**:
+
+  * Nodes snap to invisible grid for clean alignment
+
+---

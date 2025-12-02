@@ -105,7 +105,15 @@
     function addMessage(text, sender) {
         const div = document.createElement('div');
         div.className = `message ${sender}`;
-        div.innerHTML = `<div class="bubble">${text}</div>`;
+        
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        div.innerHTML = `
+            <div class="bubble">${text}</div>
+            <span style="font-size: 10px; color: #aaa; margin-top: 4px; margin-${sender === 'user' ? 'right' : 'left'}: 5px;">
+                ${time}
+            </span>
+        `;
         chatBox.appendChild(div);
         scrollToBottom();
     }
@@ -138,24 +146,137 @@
             input.type = step.type === 'number' ? 'number' : 'text';
             input.className = 'auth-input'; // reusing class
             input.style.marginBottom = '10px';
-            input.placeholder = 'Type your answer...';
+            input.placeholder = step.type === 'number' ? 'Enter a number...' : 'Type your answer...';
             
             const btn = document.createElement('button');
             btn.className = 'auth-btn';
             btn.textContent = 'Send';
             btn.style.width = '100%';
             btn.onclick = () => {
-                if(input.value.trim()) submitAnswer(input.value);
+                const val = input.value.trim();
+                if (!val) return;
+
+                if (step.type === 'number') {
+                     const num = parseFloat(val);
+                     if (isNaN(num) || num <= 0) {
+                         alert('Please enter a valid positive number.');
+                         return;
+                     }
+                }
+                submitAnswer(val);
             };
             
             // Allow Enter key
             input.addEventListener('keypress', (e) => {
-                if(e.key === 'Enter' && input.value.trim()) submitAnswer(input.value);
+                if(e.key === 'Enter') btn.click();
             });
 
             inputContainer.appendChild(input);
             inputContainer.appendChild(btn);
             input.focus();
+        }
+        else if (step.type === 'file') {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.className = 'auth-input';
+            input.style.marginBottom = '10px';
+            
+            const btn = document.createElement('button');
+            btn.className = 'auth-btn';
+            btn.textContent = 'Upload File';
+            btn.style.width = '100%';
+            
+            btn.onclick = async () => {
+                if(input.files.length === 0) return alert('Please select a file');
+                
+                // Show uploading state
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                btn.disabled = true;
+
+                const formData = new FormData();
+                formData.append('sessionId', sessionId);
+                formData.append('file', input.files[0]);
+
+                try {
+                    const res = await fetch('/service/upload', {
+                        method: 'POST',
+                        body: formData // No Content-Type header, browser sets it with boundary
+                    });
+                    const data = await res.json();
+
+                    if (data.error) {
+                        alert(data.error);
+                        btn.innerHTML = 'Upload File';
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    // Show user message (link to file)
+                    addMessage(`Uploaded: <a href="${data.filePath}" target="_blank">View File</a>`, 'user');
+
+                    if (data.completed) {
+                        addMessage("Thank you! Your request has been submitted to an operator.", 'bot');
+                        inputContainer.innerHTML = `
+                            <div style="text-align: center; padding: 10px;">
+                                <a href="/sme/dashboard" class="auth-btn" style="text-decoration: none; display: block; width: 100%;">Done</a>
+                            </div>`; 
+                    } else {
+                        addMessage(data.step.question, 'bot');
+                        renderInput(data.step);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Upload failed');
+                    btn.innerHTML = 'Upload File';
+                    btn.disabled = false;
+                }
+            };
+
+            inputContainer.appendChild(input);
+            inputContainer.appendChild(btn);
+        }
+        else if (step.type === 'review_summary') {
+            // Render Summary Table or List
+            const container = document.createElement('div');
+            container.style.maxHeight = '200px';
+            container.style.overflowY = 'auto';
+            container.style.marginBottom = '15px';
+            container.style.fontSize = '13px';
+            container.style.border = '1px solid #eee';
+            container.style.borderRadius = '8px';
+            container.style.padding = '10px';
+            container.style.background = '#fff';
+
+            step.responses.forEach(item => {
+                // Skip the confirmation itself if it exists (shouldn't yet)
+                if(item.answer === 'CONFIRMED_SUMMARY') return;
+
+                const row = document.createElement('div');
+                row.style.marginBottom = '8px';
+                row.style.paddingBottom = '8px';
+                row.style.borderBottom = '1px solid #f0f0f0';
+                
+                let displayAnswer = item.answer;
+                if (item.type === 'file') {
+                    displayAnswer = `<a href="${item.answer}" target="_blank">View File</a>`;
+                }
+
+                row.innerHTML = `
+                    <strong style="display:block; color:var(--secondary);">${item.question}</strong>
+                    <span style="color:var(--text-main);">${displayAnswer}</span>
+                `;
+                container.appendChild(row);
+            });
+
+            const btn = document.createElement('button');
+            btn.className = 'auth-btn';
+            btn.textContent = 'Confirm & Submit';
+            btn.style.width = '100%';
+            btn.style.backgroundColor = 'var(--success)';
+            btn.onclick = () => submitAnswer('CONFIRMED_SUMMARY');
+
+            inputContainer.appendChild(container);
+            inputContainer.appendChild(btn);
         }
         else {
             // Fallback

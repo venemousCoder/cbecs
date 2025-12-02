@@ -72,15 +72,23 @@ exports.submitStep = async (req, res) => {
             }
         }
 
-        // If no next step, we are done
+        // If no next step, trigger Review Summary (unless already confirmed)
         if (!nextStepId) {
-            session.status = 'completed';
-            await session.save();
-
-            // Create Final Task
-            await createTaskFromSession(session);
-
-            return res.json({ completed: true });
+            if (answer === 'CONFIRMED_SUMMARY') {
+                session.status = 'completed';
+                await session.save();
+                await createTaskFromSession(session);
+                return res.json({ completed: true });
+            } else {
+                // Send Review Step
+                return res.json({ 
+                    step: {
+                        type: 'review_summary',
+                        question: 'Please review your details before submitting:',
+                        responses: session.responses
+                    }
+                });
+            }
         }
 
         // Update session to next step
@@ -90,6 +98,54 @@ exports.submitStep = async (req, res) => {
         // Return next step data
         const nextStep = script.steps.find(s => s.stepId === nextStepId);
         res.json({ step: nextStep });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server Error' });
+    }
+};
+
+// 2.5 Handle File Upload
+exports.uploadFile = async (req, res) => {
+    try {
+        const { sessionId } = req.body;
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const session = await ServiceSession.findById(sessionId).populate('script');
+        if (!session) return res.status(404).json({ error: 'Session not found' });
+
+        const script = session.script;
+        const currentStepIndex = script.steps.findIndex(s => s.stepId === session.currentStep);
+        const currentStep = script.steps[currentStepIndex];
+
+        // Save answer (file path)
+        const filePath = `/${file.path}`; // Store relative path
+        session.responses.push({
+            stepId: currentStep.stepId,
+            question: currentStep.question,
+            answer: filePath,
+            type: 'file'
+        });
+
+        // Determine next step logic (simplified for file upload as it usually doesn't branch)
+        let nextStepId = currentStep.nextStepId;
+
+        if (!nextStepId) {
+            session.status = 'completed';
+            await session.save();
+            await createTaskFromSession(session);
+            return res.json({ completed: true });
+        }
+
+        session.currentStep = nextStepId;
+        await session.save();
+
+        const nextStep = script.steps.find(s => s.stepId === nextStepId);
+        res.json({ step: nextStep, filePath: filePath });
 
     } catch (err) {
         console.error(err);

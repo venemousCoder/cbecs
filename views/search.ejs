@@ -1,4 +1,4 @@
-<%- include('../partials/header') %>
+<%- include('./partials/header') %>
 
 <div class="container" style="padding: 30px 20px; min-height: 60vh;">
     <div class="section-header">
@@ -8,35 +8,83 @@
         </div>
     </div>
 
-    <% if (listings.length === 0) { %>
-        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-            <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
-                <i class="fas fa-search-minus"></i>
-            </div>
-            <h3 style="color: var(--secondary);">No Results Found</h3>
-            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 30px;">We couldn't find anything matching your search. Try different keywords.</p>
-            <a href="/categories" class="search-button" style="display: inline-block; text-decoration: none;">Browse Categories</a>
-        </div>
-    <% } else { %>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
-            <% listings.forEach(item => { %>
-                <a href="/listing/<%= item._id %>" class="product-card" style="text-decoration: none; color: inherit;">
-                    <div class="product-img" style="height: 180px; background: #f9fafb;">
-                        <img src="<%= item.image %>" alt="<%= item.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+    <div class="search-layout" style="display: flex; gap: 30px; align-items: flex-start;">
+        <!-- Filter Sidebar -->
+        <aside class="filter-sidebar" style="width: 250px; flex-shrink: 0; background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <h4 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Filters</h4>
+            
+            <form action="/search" method="GET">
+                <input type="hidden" name="q" value="<%= query %>">
+                
+                <!-- Category Filter -->
+                <div class="filter-group" style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">Category</label>
+                    <select name="category" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        <option value="">All Categories</option>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat._id %>" <%= filters && filters.category == cat._id ? 'selected' : '' %>><%= cat.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <!-- Type Filter -->
+                <div class="filter-group" style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">Type</label>
+                    <select name="type" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        <option value="">All Types</option>
+                        <option value="product" <%= filters && filters.type === 'product' ? 'selected' : '' %>>Product</option>
+                        <option value="service" <%= filters && filters.type === 'service' ? 'selected' : '' %>>Service</option>
+                        <option value="food" <%= filters && filters.type === 'food' ? 'selected' : '' %>>Food</option>
+                    </select>
+                </div>
+
+                <!-- Price Range Filter -->
+                <div class="filter-group" style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;">Price Range (R)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" name="minPrice" placeholder="Min" value="<%= filters && filters.minPrice %>" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        <input type="number" name="maxPrice" placeholder="Max" value="<%= filters && filters.maxPrice %>" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                     </div>
-                    <div class="product-info">
-                        <div class="type-badge <%= item.type %>"><%= item.type.toUpperCase() %></div>
-                        <h4 class="product-title"><%= item.name %></h4>
-                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;"><%= item.business.name %></p>
-                        <div class="product-meta">
-                            <span class="price">R<%= item.price.toFixed(2) %></span>
-                            <span class="rating"><i class="fas fa-star"></i> 4.5</span>
-                        </div>
+                </div>
+
+                <button type="submit" class="search-button" style="width: 100%; padding: 10px; border-radius: 4px;">Apply Filters</button>
+                <a href="/search?q=<%= query %>" style="display: block; text-align: center; margin-top: 10px; font-size: 12px; color: var(--text-muted);">Clear Filters</a>
+            </form>
+        </aside>
+
+        <!-- Results Grid -->
+        <div class="results-container" style="flex: 1;">
+            <% if (listings.length === 0) { %>
+                <div style="text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+                    <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;">
+                        <i class="fas fa-search-minus"></i>
                     </div>
-                </a>
-            <% }) %>
+                    <h3 style="color: var(--secondary);">No Results Found</h3>
+                    <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 30px;">We couldn't find anything matching your search and filters.</p>
+                    <a href="/search?q=<%= query %>" class="search-button" style="display: inline-block; text-decoration: none;">Clear Filters</a>
+                </div>
+            <% } else { %>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+                    <% listings.forEach(item => { %>
+                        <a href="/listing/<%= item._id %>" class="product-card" style="text-decoration: none; color: inherit;">
+                            <div class="product-img" style="height: 180px; background: #f9fafb;">
+                                <img src="<%= item.image %>" alt="<%= item.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div class="product-info">
+                                <div class="type-badge <%= item.type %>"><%= item.type.toUpperCase() %></div>
+                                <h4 class="product-title"><%= item.name %></h4>
+                                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;"><%= item.business.name %></p>
+                                <div class="product-meta">
+                                    <span class="price">R<%= item.price.toFixed(2) %></span>
+                                    <span class="rating"><i class="fas fa-star"></i> 4.5</span>
+                                </div>
+                            </div>
+                        </a>
+                    <% }) %>
+                </div>
+            <% } %>
         </div>
-    <% } %>
+    </div>
 </div>
 
-<%- include('../partials/footer') %>
+<%- include('./partials/footer') %>

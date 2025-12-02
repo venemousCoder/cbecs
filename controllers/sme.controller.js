@@ -256,18 +256,20 @@ exports.saveScript = async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
-        const { steps } = req.body; // Expecting JSON payload via fetch/axios
+        const { steps, visualLayout } = req.body; 
 
         let script = await ServiceScript.findOne({ business: business._id });
         
         if (script) {
             script.steps = steps;
+            if (visualLayout) script.visualLayout = visualLayout;
             script.updatedAt = Date.now();
             script.version = (script.version || 1) + 1;
         } else {
             script = new ServiceScript({
                 business: business._id,
                 steps,
+                visualLayout,
                 version: 1
             });
         }

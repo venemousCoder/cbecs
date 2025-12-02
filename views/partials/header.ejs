@@ -43,11 +43,20 @@
                 </div>
 
                 <!-- Search -->
-                <div class="search-bar">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" placeholder="Search products, services, cafés...">
-                    <button class="search-button">Search</button>
-                </div>
+                <form class="search-bar" action="/search" method="GET">
+                    <div class="search-category">
+                        <select name="category">
+                            <option value="">All</option>
+                            <% if (typeof allCategories !== 'undefined' && allCategories.length > 0) { %>
+                                <% allCategories.forEach(cat => { %>
+                                    <option value="<%= cat._id %>"><%= cat.name %></option>
+                                <% }) %>
+                            <% } %>
+                        </select>
+                    </div>
+                    <input type="text" name="q" placeholder="Search products, services..." required>
+                    <button type="submit" class="search-button"><i class="fas fa-search"></i></button>
+                </form>
 
                 <!-- User Actions -->
                 <div class="user-actions">

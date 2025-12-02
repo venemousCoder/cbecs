@@ -23,6 +23,21 @@ const ServiceScriptSchema = new Schema({
         required: { type: Boolean, default: true },
         nextStepId: { type: String, default: null }, // Default next step for non-branching types
     }],
+    visualLayout: {
+        nodes: [{
+            id: String,
+            x: Number,
+            y: Number,
+            type: { type: String },
+            question: String,
+            options: [Schema.Types.Mixed] 
+        }],
+        connections: [{
+            fromNodeId: String,
+            fromOptionIdx: Number,
+            toNodeId: String
+        }]
+    },
     createdAt: {
         type: Date,
         default: Date.now

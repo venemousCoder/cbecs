@@ -74,23 +74,46 @@ exports.getListingDetails = async (req, res) => {
 // Search Listings
 exports.searchListings = async (req, res) => {
     const query = req.query.q;
-    if (!query) return res.redirect('/');
+    if (!query && !req.query.type && !req.query.category && !req.query.minPrice && !req.query.maxPrice) return res.redirect('/');
 
     try {
-        // Regex search for name or description (case insensitive)
-        const regex = new RegExp(query, 'i');
-        
-        const listings = await Listing.find({
-            $or: [
+        const categories = await Category.find();
+        let dbQuery = {};
+
+        // Text search if query exists
+        if (query) {
+            const regex = new RegExp(query, 'i');
+            dbQuery.$or = [
                 { name: regex },
                 { description: regex }
-            ]
-        }).populate('business');
+            ];
+        }
+
+        // Price Filter
+        if (req.query.minPrice || req.query.maxPrice) {
+            dbQuery.price = {};
+            if (req.query.minPrice) dbQuery.price.$gte = Number(req.query.minPrice);
+            if (req.query.maxPrice) dbQuery.price.$lte = Number(req.query.maxPrice);
+        }
+
+        // Type Filter
+        if (req.query.type && req.query.type !== '') {
+            dbQuery.type = req.query.type;
+        }
+
+        // Category Filter
+        if (req.query.category && req.query.category !== '') {
+            dbQuery.category = req.query.category;
+        }
+        
+        const listings = await Listing.find(dbQuery).populate('business');
 
         res.render('search', {
-            title: `Search Results for "${query}"`,
-            query,
+            title: query ? `Search Results for "${query}"` : 'Search Results',
+            query: query || '',
             listings,
+            categories,
+            filters: req.query,
             user: req.user
         });
     } catch (err) {
