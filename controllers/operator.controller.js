@@ -3,7 +3,9 @@ const Business = require('../models/business');
 const Order = require('../models/order');
 const User = require('../models/user');
 const Category = require('../models/category');
+const ServiceTask = require('../models/serviceTask');
 const { createNotification } = require('../utils/notification');
+const { indexServiceBusiness } = require('../utils/searchIndexer');
 
 // ... [Previous functions: getAddOperatorPage, createOperator, getOperatorDashboard, operatorUpdateStatus, getOperatorsList, removeOperator] ...
 
@@ -38,10 +40,14 @@ exports.createOperator = async (req, res) => {
             return res.redirect('/sme/dashboard');
         }
 
-        if (business.category === 'retail' && business.operators.length >= 1) {
-            req.flash('error', 'Retail businesses can only have 1 operator.');
-            return res.redirect(`/sme/business/${businessId}/manage`);
+        // ENFORCE: Only Service or Hybrid businesses can add operators (Task 6.1.3)
+        if (business.business_type === 'retail') {
+             req.flash('error', 'Retail businesses cannot add service operators. Please upgrade to Hybrid or Service type.');
+             return res.redirect(`/sme/business/${businessId}/manage`);
         }
+        
+        // Legacy check (optional, can remove if completely forbidding retail operators)
+        // if (business.category === 'retail' && business.operators.length >= 1) { ... }
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -62,6 +68,9 @@ exports.createOperator = async (req, res) => {
 
         business.operators.push(newOperator._id);
         await business.save();
+
+        // Update Index (operator count)
+        await indexServiceBusiness(business._id);
 
         req.flash('success', 'Operator created successfully');
         res.redirect(`/sme/business/${businessId}/manage`);
@@ -185,6 +194,11 @@ exports.operatorUpdateServiceStatus = async (req, res) => {
             req.user.queueLength = (req.user.queueLength || 0) + 1;
             await req.user.save();
         }
+        
+        // Update Index (Wait Time) - using business from order serviceDetails
+        if (order.serviceDetails.business) {
+             await indexServiceBusiness(order.serviceDetails.business._id || order.serviceDetails.business);
+        }
 
         // Send Notification
         const businessName = order.serviceDetails.business ? order.serviceDetails.business.name : 'Service Provider';
@@ -206,6 +220,7 @@ exports.getOperatorsList = async (req, res) => {
         const business = await Business.findOne({ _id: req.params.id, owner: req.user._id }).populate('operators');
         if (!business) {
             req.flash('error', 'Business not found');
+            console.log("BUZZNEZZ: ", business)
             return res.redirect('/sme/dashboard');
         }
 
@@ -255,6 +270,9 @@ exports.removeOperator = async (req, res) => {
         business.operators = business.operators.filter(op => op.toString() !== operatorId);
         await business.save();
         await User.findByIdAndDelete(operatorId);
+        
+        // Update Index (operator count)
+        await indexServiceBusiness(business._id);
 
         req.flash('success', 'Operator removed successfully');
         res.redirect(`/sme/business/${businessId}/operators`);

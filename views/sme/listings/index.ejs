@@ -5,9 +5,46 @@
         <h3 class="section-title">My Listings</h3>
         <div class="user-actions">
             <a href="/sme/dashboard" class="slide-btn" style="padding: 8px 20px; font-size: 13px; background: transparent; color: var(--secondary); border: 1px solid var(--border);">Back to Dashboard</a>
-            <a href="/sme/listings/add" class="slide-btn" style="padding: 8px 20px; font-size: 13px;">+ Add Listing</a>
+            
+            <!-- Hide/Disable Add Listing for Service Businesses (Phase 6.5.1) -->
+            <% 
+               // Assuming 'businesses' array is passed or we check 'listings' business_type.
+               // Wait, 'listings' might be empty. We need 'businesses' passed from controller or check 'currentUser' context if it has business info.
+               // Controller passes 'businesses' in getListings now.
+               // BUT 'listings' is a list.
+               // We might have multiple businesses? The controller fetches "businesses = await Business.find({ owner: req.user._id });".
+               // If ANY of them are retail/hybrid, allow adding.
+               // If ALL are service, disable.
+               // But listings page is usually filtered by business or shows all. 
+               // The "Add Listing" page asks to select a business.
+               
+               // Let's check if user owns ANY business that can list products.
+               let canAddListing = false;
+               if (typeof businesses !== 'undefined') {
+                   canAddListing = businesses.some(b => b.business_type === 'retail' || b.business_type === 'hybrid');
+               } else {
+                   // Fallback if businesses not passed (legacy safety), assume true or check listings?
+                   // Better to assume true and let validation handle it, but for UI polish we want to hide.
+                   canAddListing = true;
+               }
+            %>
+
+            <% if (canAddListing) { %>
+                <a href="/sme/listings/add" class="slide-btn" style="padding: 8px 20px; font-size: 13px;">+ Add Listing</a>
+            <% } else { %>
+                <span class="slide-btn" style="padding: 8px 20px; font-size: 13px; background: #eee; color: #999; cursor: not-allowed;" title="Service businesses cannot list products.">+ Add Listing</span>
+            <% } %>
         </div>
     </div>
+
+    <!-- Informational Message for Service Businesses -->
+    <% if (typeof businesses !== 'undefined' && businesses.some(b => b.business_type === 'service') && !businesses.some(b => b.business_type === 'retail' || b.business_type === 'hybrid')) { %>
+        <div style="background: #eef6ff; color: #1d4ed8; padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm); border-left: 4px solid #3b82f6; font-size: 14px;">
+            <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+            Your business is registered as a <strong>Service provider</strong>. Service businesses cannot create product listings. 
+            To sell products, please <a href="/sme/business/<%= businesses[0]._id %>/manage" style="color: inherit; text-decoration: underline;">manage your business</a> settings to change your type.
+        </div>
+    <% } %>
 
     <!-- Flash Messages -->
     <% if (locals.success && locals.success.length > 0) { %>
@@ -28,7 +65,10 @@
             </div>
             <h3 style="color: var(--secondary);">No Listings Found</h3>
             <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 30px;">You haven't added any products or services yet.</p>
-            <a href="/sme/listings/add" class="search-button" style="display: inline-block; text-decoration: none;">Add My First Listing</a>
+            
+            <% if (canAddListing) { %>
+                <a href="/sme/listings/add" class="search-button" style="display: inline-block; text-decoration: none;">Add My First Listing</a>
+            <% } %>
         </div>
     <% } else { %>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;">

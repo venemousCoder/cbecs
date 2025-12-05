@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+
+<div class="container" style="padding: 40px 0;">
+    <!-- Header Section -->
+    <div class="shop-header" style="background: white; padding: 30px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); display: flex; gap: 30px; align-items: center; margin-bottom: 30px;">
+        <div class="shop-logo" style="width: 120px; height: 120px; flex-shrink: 0;">
+            <img src="<%= business.logo || '/public/assets/default-business.png' %>" alt="<%= business.name %>" style="width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm);">
+        </div>
+        <div class="shop-info" style="flex: 1;">
+            <span class="badge-service" style="background: var(--accent); color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; text-transform: uppercase;">Service Business</span>
+            <h1 style="margin: 10px 0; font-size: 28px;"><%= business.name %></h1>
+            <p style="color: var(--text-muted); margin-bottom: 15px;"><i class="fas fa-map-marker-alt"></i> <%= business.address %></p>
+            <div style="display: flex; gap: 20px; font-size: 14px;">
+                <span><i class="fas fa-star" style="color: gold;"></i> 4.5 (Rating)</span>
+                <span><i class="fas fa-clock"></i> Open until 8 PM</span>
+                <span><i class="fas fa-users"></i> <%= business.operators ? business.operators.length : 0 %> Operators Online</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="display: flex; gap: 30px;">
+        <!-- Services List -->
+        <div class="col-md-4" style="flex: 1;">
+            <div class="card" style="background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); height: 100%;">
+                <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">Services Offered</h3>
+                
+                <% if (script && script.steps) { %>
+                    <ul style="list-style: none; padding: 0;">
+                        <% 
+                           // Extract services from script options (naive approach: find options in first step or steps with options)
+                           let services = [];
+                           script.steps.forEach(step => {
+                               if (step.options && step.options.length > 0) {
+                                   step.options.forEach(opt => services.push(opt.label));
+                               }
+                           });
+                           services = [...new Set(services)]; // Unique
+                        %>
+                        <% services.forEach(service => { %>
+                            <li style="padding: 10px 0; border-bottom: 1px solid #f9f9f9; display: flex; justify-content: space-between;">
+                                <span><i class="fas fa-check-circle" style="color: var(--success); margin-right: 10px;"></i> <%= service %></span>
+                                <span style="color: var(--text-muted); font-size: 12px;">Starts from R100</span>
+                            </li>
+                        <% }) %>
+                        <% if (services.length === 0) { %>
+                            <li style="color: var(--text-muted);">Contact for service details.</li>
+                        <% } %>
+                    </ul>
+                <% } else { %>
+                    <p style="color: var(--text-muted);">No specific service list available.</p>
+                <% } %>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: var(--radius-sm);">
+                    <h5 style="margin: 0 0 10px 0; color: var(--primary);">How it works</h5>
+                    <p style="font-size: 13px; color: #555; margin: 0;">Select an operator below to start a chat and book your service instantly.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operators Grid -->
+        <div class="col-md-8" style="flex: 2;">
+            <div class="card" style="background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+                <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">Choose an Operator</h3>
+                
+                <% if (business.operators && business.operators.length > 0) { %>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                        <% business.operators.forEach(op => { 
+                            // Calculate wait time (approx 15 mins per person in queue)
+                            const queue = op.queueLength || 0;
+                            const waitTime = queue * 15; 
+                            const isAvailable = queue === 0;
+                        %>
+                            <div class="operator-card" style="border: 1px solid #eee; border-radius: var(--radius-sm); padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <div class="avatar" style="width: 50px; height: 50px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #777;">
+                                        <%= op.name.charAt(0) %>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 16px;"><%= op.name %></h4>
+                                        <div style="font-size: 12px; color: gold;">
+                                            <i class="fas fa-star"></i> <i class="fas fa-star"></i> <i class="fas fa-star"></i> <i class="fas fa-star"></i> <i class="fas fa-star-half-alt"></i> 4.8
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 8px; border-radius: 4px; font-size: 12px;">
+                                    <div>
+                                        <strong>Queue:</strong> <%= queue %> person(s)
+                                    </div>
+                                    <div style="color: <%= isAvailable ? 'var(--success)' : 'var(--warning)' %>; font-weight: bold;">
+                                        <%= isAvailable ? 'Available Now' : `~${waitTime} min wait` %>
+                                    </div>
+                                </div>
+
+                                <a href="/service/book/<%= business._id %>?operator=<%= op._id %>" class="auth-btn" style="text-align: center; text-decoration: none; margin-top: 5px;">
+                                    Select This Operator
+                                </a>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fas fa-user-slash" style="font-size: 32px; margin-bottom: 10px;"></i>
+                        <p>No operators are currently online. Please check back later.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-router.get('/:businessId', ensureAuthenticated, serviceController.getChatPage);
+router.get('/book/:businessId', ensureAuthenticated, serviceController.getChatPage);
 router.post('/start', ensureAuthenticated, serviceController.startServiceSession);
 router.post('/submit', ensureAuthenticated, serviceController.submitStep);
 router.post('/upload', ensureAuthenticated, upload.single('file'), serviceController.uploadFile);

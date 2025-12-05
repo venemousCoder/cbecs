@@ -12,7 +12,10 @@ describe('Edge Cases & Error Handling', () => {
     beforeAll(async () => {
         await startServer();
         if (mongoose.connection.readyState === 1) {
-            await mongoose.connection.dropDatabase();
+            const collections = mongoose.connection.collections;
+            for (const key in collections) {
+                await collections[key].deleteMany({});
+            }
         }
         
         // Register & Login Consumer
@@ -47,7 +50,8 @@ describe('Edge Cases & Error Handling', () => {
         const business = new Business({
             owner: (await mongoose.model('User').findOne({ email: 'edgesme@test.com' }))._id,
             name: 'Edge Shop',
-            category: 'retail',
+            category: 'service',
+            business_type: 'service',
             address: 'Edge St'
         });
         await business.save();
@@ -55,7 +59,12 @@ describe('Edge Cases & Error Handling', () => {
     });
 
     afterAll(async () => {
-        await mongoose.connection.dropDatabase();
+        if (mongoose.connection.readyState === 1) {
+            const collections = mongoose.connection.collections;
+            for (const key in collections) {
+                await collections[key].deleteMany({});
+            }
+        }
         await mongoose.disconnect();
     });
 

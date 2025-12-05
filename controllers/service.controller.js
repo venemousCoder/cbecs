@@ -9,6 +9,14 @@ exports.startServiceSession = async (req, res) => {
     try {
         const { businessId, operatorId } = req.body;
 
+        // Check Business Type first (Task 6.1.3)
+        const business = await Business.findById(businessId);
+        if (!business) return res.status(404).json({ error: 'Business not found' });
+
+        if (business.business_type === 'retail') {
+            return res.status(403).json({ error: 'Retail businesses cannot accept service requests.' });
+        }
+
         const script = await ServiceScript.findOne({ business: businessId });
         if (!script || script.steps.length === 0) {
             return res.status(400).json({ error: 'This business has not set up their service flow yet.' });
@@ -219,10 +227,19 @@ exports.getChatPage = async (req, res) => {
         const business = await Business.findById(req.params.businessId).populate('operators');
         if (!business) return res.redirect('/');
 
+        // Enforce Business Type (Task 6.1.3)
+        if (business.business_type === 'retail') {
+             // req.flash('error', 'This business does not accept service requests.'); // If flash is available
+             return res.redirect('/'); 
+        }
+
+        const selectedOperatorId = req.query.operator; // Get from URL
+
         res.render('service/chat', {
             title: `Book Service - ${business.name}`,
             business,
-            user: req.user
+            user: req.user,
+            selectedOperatorId // Pass to view
         });
     } catch (err) {
         console.error(err);

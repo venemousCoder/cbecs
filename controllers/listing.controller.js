@@ -3,6 +3,7 @@ const Business = require('../models/business');
 const Category = require('../models/category');
 const fs = require('fs');
 const path = require('path');
+const { indexListing, removeListingFromIndex } = require('../utils/searchIndexer');
 
 // Get all listings for the SME
 exports.getListings = async (req, res) => {
@@ -14,6 +15,7 @@ exports.getListings = async (req, res) => {
         res.render('sme/listings/index', {
             title: 'My Listings - CBECS',
             listings,
+            businesses, // Pass businesses for UI logic (checking business_type)
             user: req.user
         });
     } catch (err) {
@@ -50,37 +52,64 @@ exports.addListing = async (req, res) => {
     try {
         const { businessId, name, description, price, stock, duration, category } = req.body;
         
-        // Validation: Verify business belongs to user
+        // 1. Validation: Verify business belongs to user
         const business = await Business.findOne({ _id: businessId, owner: req.user._id }).populate('operators');
         if (!business) {
             req.flash('error', 'Invalid business selected or unauthorized');
             return res.redirect('/sme/listings/add');
         }
 
-        // CHECK: RETAIL OPERATOR RESTRICTION
+        // 2. Fetch Category to determine listing type
+        const categoryDoc = await Category.findById(category);
+        if (!categoryDoc) {
+            req.flash('error', 'Invalid category selected');
+            return res.redirect('/sme/listings/add');
+        }
+
+        // 3. Determine Listing Type from Category
+        let listingType = 'product';
+        if (categoryDoc.type === 'service') listingType = 'service';
+        else if (categoryDoc.type === 'food') listingType = 'food'; // Treating food as product-like for now, or its own type
+        
+        // Map category type to simple types for comparison if needed, but 'type' field in Listing schema supports 'product', 'service', 'food'
+
+        // 4. Enforce Business Type Constraints (Phase 6.1)
+        const bizType = business.business_type; // 'retail', 'service', 'hybrid'
+
+        // Constraint: Service businesses cannot list products (retail items)
+        if (bizType === 'service' && listingType !== 'service') {
+             req.flash('error', 'Service businesses cannot list products. Please contact support to change your business type to Hybrid or Retail.');
+             return res.redirect('/sme/listings/add');
+        }
+
+        // Constraint: Retail businesses cannot list services
+        if (bizType === 'retail' && listingType === 'service') {
+             req.flash('error', 'Retail businesses cannot offer services. Please contact support to change your business type to Hybrid or Service.');
+             return res.redirect('/sme/listings/add');
+        }
+
+        // CHECK: RETAIL OPERATOR RESTRICTION (Existing logic, still valid for Retail businesses that might somehow have operators, though we are restricting that too)
         if (business.category === 'retail' && business.operators && business.operators.length > 0) {
             req.flash('error', 'Access Denied: This retail business has an operator. Only the operator can add listings.');
             return res.redirect('/sme/listings');
         }
-
-        // Auto-assign type based on business category
-        let type = 'product';
-        if (business.category === 'service') type = 'service';
-        else if (business.category === 'food') type = 'food';
 
         const newListing = new Listing({
             business: business._id,
             name,
             description,
             price,
-            category, // Save category
-            type,
-            stock: (type === 'product' || type === 'retail') ? stock : 0,
-            duration: type === 'service' ? duration : 0,
+            category, // Save category ID
+            type: listingType,
+            stock: (listingType === 'product' || listingType === 'food') ? stock : 0,
+            duration: listingType === 'service' ? duration : 0,
             image: req.file ? `/public/uploads/listings/${req.file.filename}` : undefined
         });
 
         await newListing.save();
+        // Indexing
+        await indexListing(newListing._id);
+
         req.flash('success', 'Listing added successfully');
         res.redirect('/sme/listings');
 
@@ -169,6 +198,10 @@ exports.editListing = async (req, res) => {
         }
 
         await listing.save();
+        
+        // Update Index
+        await indexListing(listing._id);
+
         req.flash('success', 'Listing updated successfully');
         res.redirect('/sme/listings');
 
@@ -204,6 +237,10 @@ exports.deleteListing = async (req, res) => {
         }
 
         await Listing.deleteAndCleanup(listing._id);
+        
+        // Remove from index
+        await removeListingFromIndex(listing._id);
+
         req.flash('success', 'Listing deleted');
         res.redirect('/sme/listings');
 

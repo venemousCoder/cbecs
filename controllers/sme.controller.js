@@ -2,6 +2,7 @@ const Business = require('../models/business');
 const Order = require('../models/order');
 const ServiceScript = require('../models/serviceScript');
 const { createNotification } = require('../utils/notification');
+const { indexServiceBusiness } = require('../utils/searchIndexer');
 
 // Render the Create Business Page
 exports.getCreateBusinessPage = (req, res) => {
@@ -13,10 +14,10 @@ exports.getCreateBusinessPage = (req, res) => {
 
 // Handle Business Creation
 exports.createBusiness = async (req, res) => {
-    const { name, category, address, description } = req.body;
+    const { name, category, address, description, business_type } = req.body;
     let errors = [];
 
-    if (!name || !category || !address) {
+    if (!name || !category || !address || !business_type) {
         errors.push({ msg: 'Please fill in all required fields' });
     }
 
@@ -25,6 +26,7 @@ exports.createBusiness = async (req, res) => {
             errors,
             name,
             category,
+            business_type,
             address,
             description
         });
@@ -35,12 +37,17 @@ exports.createBusiness = async (req, res) => {
             owner: req.user._id,
             name,
             category,
+            business_type,
             address,
             description,
             logo: req.file ? `/public/uploads/logos/${req.file.filename}` : undefined
         });
 
         await newBusiness.save();
+        
+        // Index Business (Phase 6.2)
+        await indexServiceBusiness(newBusiness._id);
+
         req.flash('success', 'Business profile created successfully!');
         res.redirect('/sme/dashboard');
 
@@ -51,6 +58,7 @@ exports.createBusiness = async (req, res) => {
             errors,
             name,
             category,
+            business_type,
             address,
             description
         });
@@ -115,6 +123,10 @@ exports.updateBusiness = async (req, res) => {
         }
 
         await business.save();
+
+        // Update Index
+        await indexServiceBusiness(business._id);
+
         req.flash('success', 'Business profile updated');
         res.redirect(`/sme/business/${business._id}/manage`);
 
@@ -235,6 +247,12 @@ exports.getScriptBuilder = async (req, res) => {
             return res.redirect('/sme/dashboard');
         }
 
+        // Enforce Business Type (Task 6.1.3)
+        if (business.business_type === 'retail') {
+             req.flash('error', 'Retail businesses cannot create service scripts.');
+             return res.redirect('/sme/dashboard');
+        }
+
         let script = await ServiceScript.findOne({ business: business._id });
         
         // If no script exists, pass a default structure
@@ -261,6 +279,11 @@ exports.saveScript = async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
+        // ENFORCE: Retail businesses cannot save scripts
+        if (business.business_type === 'retail') {
+             return res.status(403).json({ error: 'Retail businesses cannot create service scripts.' });
+        }
+
         const { steps, visualLayout } = req.body; 
 
         let script = await ServiceScript.findOne({ business: business._id });
@@ -280,6 +303,10 @@ exports.saveScript = async (req, res) => {
         }
 
         await script.save();
+        
+        // Update Index (extract keywords)
+        await indexServiceBusiness(business._id);
+
         res.json({ success: true, message: 'Script saved successfully' });
 
     } catch (err) {

@@ -2,6 +2,7 @@ const router = require('express').Router();
 const homeController = require('../controllers/home.controller');
 const authController = require('../controllers/auth.controller');
 const consumerController = require('../controllers/consumer.controller');
+const searchController = require('../controllers/search.controller');
 const { ensureAuthenticated, forwardAuthenticated } = require('../middleware/auth');
 
 // Home route
@@ -12,7 +13,7 @@ router.get('/categories', consumerController.getAllCategories);
 router.get('/category/:id', consumerController.getCategoryListings);
 router.get('/shop/:id', consumerController.getShopDetails);
 router.get('/listing/:id', consumerController.getListingDetails);
-router.get('/search', consumerController.searchListings);
+router.get('/search', searchController.search);
 
 // Auth routes - Pages
 router.get('/login', forwardAuthenticated, homeController.getLoginPage);

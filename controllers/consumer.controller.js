@@ -133,6 +133,20 @@ exports.getShopDetails = async (req, res) => {
             return res.redirect('/');
         }
         
+        // Handle Service Business
+        if (business.business_type === 'service') {
+            const ServiceScript = require('../models/serviceScript');
+            const script = await ServiceScript.findOne({ business: business._id });
+            
+            return res.render('service/landing', {
+                title: business.name,
+                business,
+                script,
+                user: req.user
+            });
+        }
+
+        // Handle Retail/Hybrid Business
         const listings = await Listing.find({ business: business._id });
 
         res.render('shop/show', {

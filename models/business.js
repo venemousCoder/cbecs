@@ -12,6 +12,11 @@ const BusinessSchema = new Schema({
         required: true,
         trim: true
     },
+    business_type: {
+        type: String,
+        enum: ['retail', 'service', 'hybrid'],
+        required: true
+    },
     category: {
         type: String,
         enum: ['retail', 'service', 'food'],

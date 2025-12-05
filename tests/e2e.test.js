@@ -46,8 +46,12 @@ describe('End-to-End System Test', () => {
 
     beforeAll(async () => {
         await startServer();
+        // Clear DB safely
         if (mongoose.connection.readyState === 1) {
-            await mongoose.connection.dropDatabase();
+            const collections = mongoose.connection.collections;
+            for (const key in collections) {
+                await collections[key].deleteMany({});
+            }
         }
 
         // Seed Category
@@ -64,7 +68,12 @@ describe('End-to-End System Test', () => {
     });
 
     afterAll(async () => {
-        await mongoose.connection.dropDatabase();
+        if (mongoose.connection.readyState === 1) {
+            const collections = mongoose.connection.collections;
+            for (const key in collections) {
+                await collections[key].deleteMany({});
+            }
+        }
         await mongoose.disconnect();
     });
 
@@ -108,6 +117,7 @@ describe('End-to-End System Test', () => {
             .set('Cookie', smeCookie)
             .field('name', 'Test Retail Shop')
             .field('category', 'retail')
+            .field('business_type', 'retail') // Add business_type
             .field('address', '123 Test St')
             .field('description', 'A test shop')
             .attach('logo', testImagePath)
@@ -195,7 +205,8 @@ describe('End-to-End System Test', () => {
             .set('Cookie', smeCookie)
             .field('name', 'Test Service Shop')
             .field('category', 'service')
-            .field('address', '456 Service Ln')
+            .field('business_type', 'service') // Add business_type
+            .field('address', '456 Test Ave')
             .field('description', 'We fix things')
             .attach('logo', testImagePath)
             .expect(302);
