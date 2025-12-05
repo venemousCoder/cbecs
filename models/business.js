@@ -44,6 +44,23 @@ const BusinessSchema = new Schema({
         enum: ['pending', 'active', 'suspended'],
         default: 'active'
     },
+    changeRequest: {
+        requestedType: {
+            type: String,
+            enum: ['retail', 'service', 'hybrid']
+        },
+        reason: String,
+        status: {
+            type: String,
+            enum: ['pending', 'approved', 'rejected'],
+            default: 'pending'
+        },
+        requestedAt: {
+            type: Date,
+            default: Date.now
+        },
+        adminResponse: String
+    },
     createdAt: {
         type: Date,
         default: Date.now

@@ -63,6 +63,7 @@ router.post('/create-business', logoUpload.single('logo'), smeController.createB
 router.get('/business/:id/manage', smeController.getManageBusinessPage);
 router.post('/business/:id/update', logoUpload.single('logo'), smeController.updateBusiness);
 router.post('/business/:id/delete', smeController.deleteBusiness);
+router.post('/business/:id/request-type-change', smeController.requestTypeChange);
 
 // --- Order Routes ---
 router.get('/orders', smeController.getSmeOrders);

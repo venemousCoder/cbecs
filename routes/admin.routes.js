@@ -13,6 +13,8 @@ router.get('/dashboard', adminController.getDashboard);
 // Manage SMEs
 router.get('/smes', adminController.getSMEs);
 router.post('/smes/update-status', adminController.updateSMEStatus);
+router.get('/smes/requests', adminController.getTypeChangeRequests);
+router.post('/smes/requests/handle', adminController.handleTypeChangeRequest);
 
 // Manage Listings
 router.get('/listings', adminController.getListings);

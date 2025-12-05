@@ -45,9 +45,20 @@
                         <label>Business Type</label>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <input type="text" class="form-control" value="<%= business.business_type ? business.business_type.toUpperCase() : 'UNKNOWN' %>" disabled style="background-color: #f9fafb; cursor: not-allowed; flex: 1;">
-                            <!-- Placeholder for Request Change -->
-                            <span style="font-size: 12px; color: var(--text-muted); max-width: 150px;">To change type, please contact support.</span>
+                            
+                            <% if (business.changeRequest && business.changeRequest.status === 'pending') { %>
+                                <span style="font-size: 12px; color: var(--warning); font-weight: bold;">
+                                    <i class="fas fa-clock"></i> Change to <%= business.changeRequest.requestedType %> Pending
+                                </span>
+                            <% } else { %>
+                                <button type="button" onclick="openTypeChangeModal()" style="background: none; border: none; color: var(--primary); font-size: 12px; cursor: pointer; text-decoration: underline;">Request Change</button>
+                            <% } %>
                         </div>
+                        <% if (business.changeRequest && business.changeRequest.status === 'rejected' && !business.changeRequest.acknowledged) { %>
+                            <div style="margin-top: 5px; font-size: 12px; color: var(--danger);">
+                                Last Request Rejected: <%= business.changeRequest.adminResponse || 'No reason provided.' %>
+                            </div>
+                        <% } %>
                     </div>
 
                     <div class="form-group">
@@ -78,7 +89,11 @@
             <div style="background: white; padding: 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: 25px;">
                 <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--secondary);">Quick Actions</h4>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <a href="/sme/listings/add" class="slide-btn" style="text-align: center; background: var(--primary); color: white;">Add New Listing</a>
+                    <% if (business.business_type === 'service') { %>
+                        <span class="slide-btn" style="text-align: center; background: #eee; color: #999; cursor: not-allowed;" title="Service businesses cannot list products. To add products, request a business type change.">Add New Listing (Product)</span>
+                    <% } else { %>
+                        <a href="/sme/listings/add" class="slide-btn" style="text-align: center; background: var(--primary); color: white;">Add New Listing</a>
+                    <% } %>
                     <a href="/sme/listings" class="slide-btn" style="text-align: center; background: white; color: var(--secondary); border: 1px solid var(--border);">View All Listings</a>
                 </div>
             </div>
@@ -113,5 +128,51 @@
 
     </div>
 </div>
+
+<!-- Type Change Modal -->
+<div id="typeChangeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 25px; border-radius: var(--radius-md); width: 90%; max-width: 400px;">
+        <h4 style="margin-top: 0; color: var(--secondary);">Request Business Type Change</h4>
+        <p style="font-size: 13px; color: var(--text-muted);">Current Type: <strong><%= business.business_type.toUpperCase() %></strong></p>
+        
+        <form action="/sme/business/<%= business._id %>/request-type-change" method="POST">
+            <div class="form-group">
+                <label for="requestedType" style="font-size: 13px;">New Business Type</label>
+                <select name="requestedType" id="requestedType" class="form-control" required>
+                    <option value="" disabled selected>Select new type...</option>
+                    <% if (business.business_type !== 'retail') { %> <option value="retail">Retail (Sell Products Only)</option> <% } %>
+                    <% if (business.business_type !== 'service') { %> <option value="service">Service (Services Only)</option> <% } %>
+                    <% if (business.business_type !== 'hybrid') { %> <option value="hybrid">Hybrid (Products + Services)</option> <% } %>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="reason" style="font-size: 13px;">Reason for Change</label>
+                <textarea name="reason" id="reason" class="form-control" rows="3" placeholder="Why do you need to change your business type?" required></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" onclick="closeTypeChangeModal()" class="slide-btn" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border);">Cancel</button>
+                <button type="submit" class="slide-btn" style="background: var(--primary); color: white;">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openTypeChangeModal() {
+        document.getElementById('typeChangeModal').style.display = 'flex';
+    }
+    function closeTypeChangeModal() {
+        document.getElementById('typeChangeModal').style.display = 'none';
+    }
+    // Close on click outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('typeChangeModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
 
 <%- include('../partials/footer') %>

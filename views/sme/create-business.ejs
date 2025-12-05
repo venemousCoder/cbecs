@@ -16,6 +16,25 @@
             <% }); %>
         <% } %>
 
+        <!-- Business Type Guidance -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 15px; margin-bottom: 25px;">
+            <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 14px; color: var(--secondary);"><i class="fas fa-info-circle" style="color: var(--primary);"></i> Which Business Type are you?</h4>
+            <div style="display: grid; gap: 10px; font-size: 12px; color: var(--text-muted);">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <span style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; min-width: 60px; text-align: center;">RETAIL</span>
+                    <span>You sell physical goods (e.g., phones, clothes, food). You can manage inventory and shipping.</span>
+                </div>
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <span style="background: #9c27b0; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; min-width: 60px; text-align: center;">SERVICE</span>
+                    <span>You offer skills or labor (e.g., repairs, salon, cleaning). You can manage operators and queues.</span>
+                </div>
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <span style="background: #64748b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; min-width: 60px; text-align: center;">HYBRID</span>
+                    <span>You do both (e.g., a salon that also sells hair products). Verification required.</span>
+                </div>
+            </div>
+        </div>
+
         <form action="/sme/create-business" method="POST" enctype="multipart/form-data" class="auth-form">
             
             <div class="form-group">

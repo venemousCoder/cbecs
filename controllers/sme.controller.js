@@ -157,6 +157,41 @@ exports.deleteBusiness = async (req, res) => {
     }
 };
 
+// Request Business Type Change
+exports.requestTypeChange = async (req, res) => {
+    try {
+        const { requestedType, reason } = req.body;
+        const business = await Business.findOne({ _id: req.params.id, owner: req.user._id });
+
+        if (!business) {
+            req.flash('error', 'Business not found');
+            return res.redirect('/sme/dashboard');
+        }
+
+        if (business.business_type === requestedType) {
+            req.flash('error', 'You are already registered as this business type.');
+            return res.redirect(`/sme/business/${business._id}/manage`);
+        }
+
+        business.changeRequest = {
+            requestedType,
+            reason,
+            status: 'pending',
+            requestedAt: Date.now()
+        };
+
+        await business.save();
+
+        req.flash('success', 'Request submitted successfully. Pending admin approval.');
+        res.redirect(`/sme/business/${business._id}/manage`);
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Error submitting request');
+        res.redirect(`/sme/business/${req.params.id}/manage`);
+    }
+};
+
 // --- SME Order Management ---
 
 // Get SME Orders

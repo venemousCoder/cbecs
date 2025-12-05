@@ -1,11 +1,15 @@
 const SearchIndex = require('../models/searchIndex');
 const Category = require('../models/category');
+const SearchLog = require('../models/searchLog');
 
 exports.search = async (req, res) => {
     try {
         const query = req.query.q || '';
         const typeFilter = req.query.type || 'all'; // 'product', 'service', 'all'
         const sort = req.query.sort || 'relevance'; // 'price_asc', 'price_desc', 'wait_asc'
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
 
         let searchCriteria = {};
 
@@ -21,26 +25,35 @@ exports.search = async (req, res) => {
             searchCriteria.type = 'service_business';
         }
 
-        // Execute Search
+        // Execute Search Count
+        const totalResults = await SearchIndex.countDocuments(searchCriteria);
+        const totalPages = Math.ceil(totalResults / limit);
+
+        // Execute Search Query
         let resultsQuery = SearchIndex.find(searchCriteria);
 
         // Sorting
-        if (query) {
+        if (query && sort === 'relevance') {
             resultsQuery = resultsQuery.sort({ score: { $meta: 'textScore' } });
-        }
-
-        if (sort === 'price_asc') {
+        } else if (sort === 'price_asc') {
             resultsQuery = resultsQuery.sort({ price: 1 });
         } else if (sort === 'price_desc') {
             resultsQuery = resultsQuery.sort({ price: -1 });
         } else if (sort === 'wait_asc') {
-            // avg_wait_time is a string "X min", strictly speaking sorting strings might not be perfect numeric sort
-            // but for now let's assume it sorts loosely. 
-            // Ideally we should store numeric wait time in index.
             resultsQuery = resultsQuery.sort({ avg_wait_time: 1 });
         }
 
-        const results = await resultsQuery.limit(50); // Limit results
+        const results = await resultsQuery.skip(skip).limit(limit);
+
+        // Log Search Analytics (Async, non-blocking)
+        if (query) {
+            SearchLog.create({
+                query,
+                filters: { type: typeFilter, sort },
+                resultCount: totalResults,
+                user: req.user ? req.user._id : undefined
+            }).catch(err => console.error('Search Analytics Error:', err));
+        }
 
         res.render('search', {
             title: `Search Results for "${query}"`,
@@ -48,7 +61,13 @@ exports.search = async (req, res) => {
             typeFilter,
             sort,
             results,
-            user: req.user
+            user: req.user,
+            pagination: {
+                page,
+                totalPages,
+                totalResults,
+                limit
+            }
         });
 
     } catch (err) {

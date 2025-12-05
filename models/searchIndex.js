@@ -16,27 +16,23 @@ const SearchIndexSchema = new Schema({
     },
     title: { // Product Name or Business Name
         type: String,
-        required: true,
-        text: true // Text index
+        required: true
     },
     description: {
-        type: String,
-        text: true
+        type: String
     },
     category: {
         type: String
     },
     tags: [{
-        type: String,
-        text: true
+        type: String
     }],
     price: {
         type: Number // Product only
     },
     // Service Business Fields
     services_offered: [{
-        type: String,
-        text: true
+        type: String
     }],
     operator_count: {
         type: Number

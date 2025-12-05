@@ -110,6 +110,21 @@
                         <% } %>
                     <% }) %>
                 </div>
+
+                <!-- Pagination -->
+                <% if (locals.pagination && pagination.totalPages > 1) { %>
+                    <div class="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 30px; align-items: center;">
+                        <% if (pagination.page > 1) { %>
+                            <a href="/search?q=<%= query %>&type=<%= typeFilter %>&sort=<%= sort %>&page=<%= pagination.page - 1 %>" class="slide-btn" style="padding: 8px 15px; background: white; color: var(--secondary); border: 1px solid #ddd;">&laquo; Previous</a>
+                        <% } %>
+
+                        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+
+                        <% if (pagination.page < pagination.totalPages) { %>
+                            <a href="/search?q=<%= query %>&type=<%= typeFilter %>&sort=<%= sort %>&page=<%= pagination.page + 1 %>" class="slide-btn" style="padding: 8px 15px; background: white; color: var(--secondary); border: 1px solid #ddd;">Next &raquo;</a>
+                        <% } %>
+                    </div>
+                <% } %>
             <% } %>
         </div>
     </div>

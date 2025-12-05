@@ -19,7 +19,11 @@
         <div style="background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); text-align: center;">
             <h2 style="margin: 0; color: var(--primary);"><%= stats.businesses %></h2>
             <p style="color: var(--text-muted); margin: 0;">SMEs Registered</p>
-            <a href="/admin/smes" style="font-size: 12px; text-decoration: none;">Manage</a>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <a href="/admin/smes" style="font-size: 12px; text-decoration: none;">Manage</a>
+                <span style="color: #eee;">|</span>
+                <a href="/admin/smes/requests" style="font-size: 12px; text-decoration: none; color: var(--warning); font-weight: bold;">Requests</a>
+            </div>
         </div>
         <div style="background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); text-align: center;">
             <h2 style="margin: 0; color: var(--primary);"><%= stats.listings %></h2>

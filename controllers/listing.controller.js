@@ -78,7 +78,7 @@ exports.addListing = async (req, res) => {
 
         // Constraint: Service businesses cannot list products (retail items)
         if (bizType === 'service' && listingType !== 'service') {
-             req.flash('error', 'Service businesses cannot list products. Please contact support to change your business type to Hybrid or Retail.');
+             req.flash('error', 'Service businesses cannot list products. Please contact support to change your business type.');
              return res.redirect('/sme/listings/add');
         }
 
