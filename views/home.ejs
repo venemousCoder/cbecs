@@ -125,7 +125,7 @@
 
 <div class="product-grid">
     <% listings.forEach(item => { %>
-        <a href="/<%= item.type === 'service' ? 'booking' : (item.type === 'food' ? 'order' : 'product') %>/<%= item._id %>" class="product-card">
+        <a href="/<%= item.type === 'service' ? 'service/shop' : (item.type === 'food' ? 'order' : 'product') %>/<%= item._id %>" class="product-card">
             <!-- Type Badge -->
             <div class="type-badge <%= item.type %>">
                 <% if(item.type === 'retail' || item.type === 'product') { %> <i class="fas fa-box"></i> Retail

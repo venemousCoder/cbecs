@@ -5,12 +5,16 @@ const cartRouter = require('./cart.routes');
 const operatorRouter = require('./operator.routes');
 const adminRouter = require('./admin.routes');
 const orderController = require('../controllers/order.controller');
+const ratingController = require('../controllers/rating.controller');
 const { ensureAuthenticated } = require('../middleware/auth');
 
 router.use('/', homeRouter);
 router.use('/', cartRouter);
 router.get('/orders', ensureAuthenticated, orderController.getConsumerOrders);
 router.get('/bookings', ensureAuthenticated, orderController.getConsumerOrders); // Alias for bookings
+
+// Rating Route
+router.post('/orders/:orderId/rate', ensureAuthenticated, ratingController.rateOrder);
 
 router.use('/sme', smeRouter);
 router.use('/operator', operatorRouter);

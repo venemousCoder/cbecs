@@ -71,8 +71,18 @@ const OrderSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'in_progress', 'ready', 'completed', 'cancelled'],
+        enum: ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
         default: 'pending'
+    },
+    // Feedback System
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5
+    },
+    review: {
+        type: String,
+        trim: true
     },
     createdAt: {
         type: Date,

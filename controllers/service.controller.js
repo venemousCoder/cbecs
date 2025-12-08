@@ -9,12 +9,29 @@ exports.startServiceSession = async (req, res) => {
     try {
         const { businessId, operatorId } = req.body;
 
+        if (!businessId || !operatorId) {
+            return res.status(400).json({ error: 'Business ID and Operator ID are required.' });
+        }
+
         // Check Business Type first (Task 6.1.3)
-        const business = await Business.findById(businessId);
+        const business = await Business.findById(businessId).populate('operators');
         if (!business) return res.status(404).json({ error: 'Business not found' });
 
         if (business.business_type === 'retail') {
             return res.status(403).json({ error: 'Retail businesses cannot accept service requests.' });
+        }
+
+        // Validate Operator belongs to Business
+        const operatorUser = business.operators.find(op => op._id.toString() === operatorId);
+        if (!operatorUser) {
+            return res.status(400).json({ error: 'Selected operator does not belong to this business.' });
+        }
+
+        // Check if Operator is Available (Task 7.6.1)
+        // We need to fetch the full user object to check isAvailable, as populate might only get basic fields or we just have the ref from business
+        // Actually business.populate('operators') fetches full documents.
+        if (!operatorUser.isAvailable) {
+             return res.status(400).json({ error: 'Selected operator is currently unavailable. Please choose another.' });
         }
 
         const script = await ServiceScript.findOne({ business: businessId });
@@ -28,7 +45,7 @@ exports.startServiceSession = async (req, res) => {
             consumer: req.user._id,
             script: script._id,
             scriptVersion: script.version || 1, // Save version
-            operator: operatorId || null, // Save selected operator
+            operator: operatorId, // Save selected operator
             currentStep: script.steps[0].stepId,
             responses: [],
             status: 'in_progress'
@@ -191,10 +208,22 @@ async function createTaskFromSession(session) {
         }
     }
 
-    // Calculate Queue Position & Wait Time
-    // Position is current queue length + 1
-    const operatorUser = await User.findById(operatorId);
-    const queuePos = (operatorUser.queueLength || 0) + 1;
+    // Calculate Queue Position & Wait Time (Task 7.6.3 - Atomic Update)
+    // We atomically increment the queue length and get the updated document
+    const updatedOperator = await User.findByIdAndUpdate(
+        operatorId, 
+        { $inc: { queueLength: 1 } },
+        { new: true } // Return the modified document
+    );
+    
+    // If operator not found (rare race condition or deletion), handle gracefully
+    if (!updatedOperator) {
+         console.error(`Operator ${operatorId} not found during queue assignment`);
+         // We might want to throw error or assign to backup, but for now we proceed with fallback logic or just fail safely
+         // Let's assume queuePos 1 if fail
+    }
+
+    const queuePos = updatedOperator ? updatedOperator.queueLength : 1;
     const estWait = queuePos * 15; // Assuming 15 mins per task roughly
 
     // Create unified Order of type 'service_request'
@@ -213,15 +242,36 @@ async function createTaskFromSession(session) {
     });
 
     await newOrder.save();
-
-    // Update Operator's Queue Length
-    if (operatorUser) {
-        operatorUser.queueLength = (operatorUser.queueLength || 0) + 1;
-        await operatorUser.save();
-    }
+    // Operator queue updated via atomic operation above
 }
 
-// 3. Get Chat Page
+// 3. Get Shop Landing Page (Operator Selection)
+exports.getShopLandingPage = async (req, res) => {
+    try {
+        const business = await Business.findById(req.params.businessId).populate('operators');
+        if (!business) return res.redirect('/');
+
+        // Enforce Business Type
+        if (business.business_type === 'retail') {
+             return res.redirect('/'); 
+        }
+
+        // Get Script to show services (optional, just for display)
+        const script = await ServiceScript.findOne({ business: business._id });
+
+        res.render('service/landing', {
+            title: `${business.name} - Select Operator`,
+            business,
+            script, // Pass script to show services list
+            user: req.user
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
+    }
+};
+
+// 4. Get Chat Page
 exports.getChatPage = async (req, res) => {
     try {
         const business = await Business.findById(req.params.businessId).populate('operators');
@@ -229,11 +279,22 @@ exports.getChatPage = async (req, res) => {
 
         // Enforce Business Type (Task 6.1.3)
         if (business.business_type === 'retail') {
-             // req.flash('error', 'This business does not accept service requests.'); // If flash is available
              return res.redirect('/'); 
         }
 
-        const selectedOperatorId = req.query.operator; // Get from URL
+        const selectedOperatorId = req.query.operator; 
+
+        // Phase 7: Enforce Operator Selection
+        if (!selectedOperatorId) {
+            return res.redirect(`/service/shop/${business._id}`);
+        }
+
+        // Validate Operator belongs to business
+        const operatorExists = business.operators.some(op => op._id.toString() === selectedOperatorId);
+        if (!operatorExists) {
+            // If invalid operator, go back to selection
+            return res.redirect(`/service/shop/${business._id}`);
+        }
 
         res.render('service/chat', {
             title: `Book Service - ${business.name}`,
